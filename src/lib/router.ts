@@ -1,0 +1,43 @@
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import {
+  buildClassificationPrompt,
+  buildConversationHistory,
+} from "./prompt-builder";
+import type { FlowWithDetails, SimMessage, InferenceResult } from "./types";
+
+export async function classifyConversation(
+  flow: FlowWithDetails,
+  messages: SimMessage[]
+): Promise<InferenceResult> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey || apiKey === "your_gemini_api_key_here") {
+    throw new Error("GEMINI_API_KEY not configured in .env.local");
+  }
+
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+  const historyString = buildConversationHistory(
+    messages,
+    flow.role_a_label,
+    flow.role_b_label
+  );
+
+  const prompt = buildClassificationPrompt(
+    flow,
+    flow.categories,
+    flow.extract_fields,
+    historyString
+  );
+
+  const result = await model.generateContent(prompt);
+  const text = result.response.text();
+
+  // Extract JSON — handle markdown-wrapped responses
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    return JSON.parse(jsonMatch[0]) as InferenceResult;
+  }
+
+  return JSON.parse(text) as InferenceResult;
+}
