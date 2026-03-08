@@ -181,6 +181,13 @@ export function SimulationPanel({
           setInferenceByMsgId((prev) => ({ ...prev, [msgId]: result }));
           setExpandedResults((prev) => new Set(prev).add(msgId));
         }
+      } else {
+        // No template suggested (e.g. needs_human) — attach result to last message
+        const lastMsg = messages[messages.length - 1];
+        if (lastMsg) {
+          setInferenceByMsgId((prev) => ({ ...prev, [lastMsg.id]: result }));
+          setExpandedResults((prev) => new Set(prev).add(lastMsg.id));
+        }
       }
 
       setHasUnsaved(true);
