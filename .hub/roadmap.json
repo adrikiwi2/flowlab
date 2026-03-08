@@ -1,6 +1,6 @@
 {
   "project": "FlowLab",
-  "vision": "Plataforma multi-tenant para disenar, simular y testear flujos de conversacion con IA",
+  "vision": "Plataforma multi-tenant para disenar, simular y ejecutar flujos de conversacion con IA sobre canales reales (Instagram, WhatsApp)",
   "milestones": [
     {
       "id": "m1",
@@ -15,12 +15,34 @@
       "status": "done",
       "due": null,
       "notes": "Desplegado en https://flowlab-eta.vercel.app — Vercel + Turso configurado con auto-deploy"
+    },
+    {
+      "id": "m3",
+      "title": "Infraestructura de agente",
+      "status": "done",
+      "due": null,
+      "notes": "needs_human flag, Bearer token auth, agent_config en flows, schema extendido (leads, messages, conversation_state, outbox, lead_events)"
+    },
+    {
+      "id": "m4",
+      "title": "Agente local (FlowLab Agent)",
+      "status": "in-progress",
+      "due": null,
+      "notes": "Repo separado. FastAPI + PyInstaller. UI web en localhost. Scraping IG/WA via Playwright/CDP. Conecta con FlowLab API via Bearer token."
+    },
+    {
+      "id": "m5",
+      "title": "Dashboard de conversaciones",
+      "status": "planned",
+      "due": null,
+      "notes": "Vista en FlowLab web de leads, mensajes, needs_human queue. Los datos vienen del agente local via API."
     }
   ],
   "principles": [
     "Dark theme, sin librerias de componentes, Tailwind puro",
     "Edicion inline con blur-to-save",
-    "Aislamiento total por tenant via JWT cookie",
-    "SQLite local en dev, Turso en prod (mismo driver @libsql/client)"
+    "Aislamiento total por tenant via JWT cookie + Bearer token",
+    "SQLite local en dev, Turso en prod (mismo driver @libsql/client)",
+    "agent_config admin-only: los tenants ven pero no editan la config del agente"
   ]
 }
