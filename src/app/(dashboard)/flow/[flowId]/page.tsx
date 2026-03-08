@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { FlowDesigner } from "@/components/flow-designer";
 import { SimulationPanel } from "@/components/simulation-panel";
+import { AgentConfigPanel } from "@/components/agent-config-panel";
 import type { FlowWithDetails } from "@/lib/types";
 
 type Tab = "designer" | "simulate";
@@ -159,6 +160,13 @@ export default function FlowPage() {
                 placeholder="You are an intelligent conversation router..."
               />
             </div>
+
+            {/* Agent config (read-only) */}
+            {flow.agent_config && (
+              <div className="mt-4 border-t border-border pt-4">
+                <AgentConfigPanel configJson={flow.agent_config} />
+              </div>
+            )}
           </div>
         )}
       </div>
