@@ -11,6 +11,8 @@ import {
   Send,
   Loader2,
   HelpCircle,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { ChatBubble } from "./chat-bubble";
 import { AiResultCard } from "./ai-result-card";
@@ -46,6 +48,7 @@ export function SimulationPanel({
   const [isInferring, setIsInferring] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [hasUnsaved, setHasUnsaved] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   // Map of msgId -> InferenceResult for each inference that generated a message
   const [inferenceByMsgId, setInferenceByMsgId] = useState<Record<string, InferenceResult>>({});
@@ -289,74 +292,93 @@ export function SimulationPanel({
 
   return (
     <div className="flex h-[calc(100vh-220px)] min-h-[400px] gap-4">
-      {/* Simulation List */}
-      <div className="flex w-56 flex-shrink-0 flex-col rounded-xl border border-border bg-base-1">
-        <div className="flex items-center justify-between border-b border-border px-3 py-2.5">
-          <span className="text-xs font-semibold text-text-secondary">
-            Simulations
-          </span>
-          <button
-            onClick={newSim}
-            className="rounded-md p-1 text-text-muted transition-all hover:bg-base-3 hover:text-accent"
-          >
-            <Plus size={14} />
-          </button>
+      {/* Simulation List — collapsible */}
+      <div
+        className={`flex flex-shrink-0 flex-col rounded-xl border border-border bg-base-1 transition-all duration-200 ${
+          sidebarOpen ? "w-56" : "w-10"
+        }`}
+      >
+        <div className="flex items-center justify-between border-b border-border px-2 py-2.5">
+          {sidebarOpen && (
+            <span className="text-xs font-semibold text-text-secondary pl-1">
+              Simulations
+            </span>
+          )}
+          <div className={`flex items-center gap-0.5 ${sidebarOpen ? "" : "mx-auto"}`}>
+            {sidebarOpen && (
+              <button
+                onClick={newSim}
+                className="rounded-md p-1 text-text-muted transition-all hover:bg-base-3 hover:text-accent"
+              >
+                <Plus size={14} />
+              </button>
+            )}
+            <button
+              onClick={() => setSidebarOpen((v) => !v)}
+              className="rounded-md p-1 text-text-muted transition-all hover:bg-base-3 hover:text-accent"
+              title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+            >
+              {sidebarOpen ? <PanelLeftClose size={14} /> : <PanelLeftOpen size={14} />}
+            </button>
+          </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-1.5">
-          {simulations.length === 0 && (
-            <p className="px-2 py-4 text-center text-[11px] text-text-muted">
-              No saved simulations
-            </p>
-          )}
-          {simulations.map((sim) => {
-            const isActive = sim.id === activeSimId;
-            const statusCategory = categories.find(
-              (c) => c.name === sim.detected_status
-            );
-            return (
-              <div
-                key={sim.id}
-                className={`group mb-0.5 flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 transition-all ${
-                  isActive
-                    ? "bg-accent/10 text-text-primary"
-                    : "text-text-secondary hover:bg-base-2"
-                }`}
-                onClick={() => loadSim(sim)}
-              >
-                <MessageCircle size={12} className="flex-shrink-0 text-text-muted" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[11px] font-medium">
-                    {sim.title || "Untitled"}
-                  </p>
-                  {sim.detected_status && (
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <div
-                        className="h-1.5 w-1.5 rounded-full"
-                        style={{
-                          backgroundColor:
-                            statusCategory?.color || "#6366f1",
-                        }}
-                      />
-                      <span className="font-mono text-[9px] text-text-muted">
-                        {sim.detected_status}
-                      </span>
-                    </div>
-                  )}
-                </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteSim(sim.id);
-                  }}
-                  className="rounded p-0.5 text-transparent transition-all group-hover:text-text-muted group-hover:hover:text-danger"
+        {sidebarOpen && (
+          <div className="flex-1 overflow-y-auto p-1.5">
+            {simulations.length === 0 && (
+              <p className="px-2 py-4 text-center text-[11px] text-text-muted">
+                No saved simulations
+              </p>
+            )}
+            {simulations.map((sim) => {
+              const isActive = sim.id === activeSimId;
+              const statusCategory = categories.find(
+                (c) => c.name === sim.detected_status
+              );
+              return (
+                <div
+                  key={sim.id}
+                  className={`group mb-0.5 flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 transition-all ${
+                    isActive
+                      ? "bg-accent/10 text-text-primary"
+                      : "text-text-secondary hover:bg-base-2"
+                  }`}
+                  onClick={() => loadSim(sim)}
                 >
-                  <Trash2 size={11} />
-                </button>
-              </div>
-            );
-          })}
-        </div>
+                  <MessageCircle size={12} className="flex-shrink-0 text-text-muted" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[11px] font-medium">
+                      {sim.title || "Untitled"}
+                    </p>
+                    {sim.detected_status && (
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <div
+                          className="h-1.5 w-1.5 rounded-full"
+                          style={{
+                            backgroundColor:
+                              statusCategory?.color || "#6366f1",
+                          }}
+                        />
+                        <span className="font-mono text-[9px] text-text-muted">
+                          {sim.detected_status}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteSim(sim.id);
+                    }}
+                    className="rounded p-0.5 text-transparent transition-all group-hover:text-text-muted group-hover:hover:text-danger"
+                  >
+                    <Trash2 size={11} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Chat Area */}

@@ -28,6 +28,27 @@ html {
   color-scheme: dark;
 }
 
+html.light {
+  color-scheme: light;
+  --color-base-0: #f5f7fa;
+  --color-base-1: #ffffff;
+  --color-base-2: #eef0f5;
+  --color-base-3: #e2e5ed;
+  --color-base-4: #d0d5e0;
+  --color-border: #dde1ea;
+  --color-border-bright: #c5cbd8;
+  --color-text-primary: #1a1f2e;
+  --color-text-secondary: #555e72;
+  --color-text-muted: #8c95a8;
+  --color-accent: #6366f1;
+  --color-accent-dim: #4f46e5;
+  --color-accent-glow: rgba(99, 102, 241, 0.08);
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-danger: #dc2626;
+  --color-violet: #7c3aed;
+}
+
 body {
   background: var(--color-base-0);
   color: var(--color-text-primary);
@@ -39,6 +60,14 @@ body {
     transparent 0
   );
   background-size: 28px 28px;
+}
+
+html.light body {
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    rgba(99, 102, 241, 0.06) 1px,
+    transparent 0
+  );
 }
 
 /* ── Scrollbar ────────────────────────────────── */
@@ -98,6 +127,11 @@ body {
 ::selection {
   background: rgba(99, 102, 241, 0.3);
   color: #fff;
+}
+
+html.light ::selection {
+  background: rgba(99, 102, 241, 0.2);
+  color: #1a1f2e;
 }
 
 /* ── Focus ────────────────────────────────────── */

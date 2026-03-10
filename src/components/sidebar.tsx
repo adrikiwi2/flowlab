@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
 import {
   Plus,
   GitBranch,
@@ -11,6 +12,8 @@ import {
   User,
   PanelLeftClose,
   PanelLeftOpen,
+  Sun,
+  Moon,
 } from "lucide-react";
 import type { Flow } from "@/lib/types";
 
@@ -30,8 +33,12 @@ export function Sidebar() {
   const [tenant, setTenant] = useState<TenantInfo | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [collapsed, setCollapsed] = useState(true);
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const { theme, setTheme } = useTheme();
+
+  useEffect(() => setMounted(true), []);
 
   const activeFlowId =
     pathname.startsWith("/flow/") ? pathname.split("/")[2] : null;
@@ -135,6 +142,15 @@ export function Sidebar() {
             >
               <User size={13} className="text-accent" />
             </div>
+          )}
+          {mounted && (
+            <button
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="rounded-md p-1.5 text-text-muted transition-colors hover:bg-base-2 hover:text-text-secondary"
+              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {theme === "dark" ? <Sun size={13} /> : <Moon size={13} />}
+            </button>
           )}
           <button
             onClick={logout}
@@ -246,6 +262,15 @@ export function Sidebar() {
                 {tenant.email}
               </p>
             </div>
+            {mounted && (
+              <button
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="flex-shrink-0 rounded-md p-1.5 text-text-muted transition-colors hover:bg-base-2 hover:text-text-secondary"
+                title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              >
+                {theme === "dark" ? <Sun size={13} /> : <Moon size={13} />}
+              </button>
+            )}
             <button
               onClick={logout}
               className="flex-shrink-0 rounded-md p-1.5 text-text-muted transition-colors hover:bg-base-2 hover:text-text-secondary"
