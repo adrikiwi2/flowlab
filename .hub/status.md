@@ -19,6 +19,16 @@
 - **Simulation + Live**: respuestas generadas se muestran como "Knowledge Response" en result cards y "AI Generated" en outbox
 - **API**: `GET/POST /api/knowledge-docs`, `GET/PUT/DELETE /api/knowledge-docs/:docId`
 - **InferenceResult ampliado**: nuevo campo `generated_response` para respuestas de knowledge mode
+- **IberoExpress flow reconfigurado en local + prod**:
+  - System prompt completo con info de empresa, marcas, cobertura, links utiles
+  - 11 categorias (antes 8): +Consulta de producto (knowledge), +HORECA (template), +Recetas/uso (knowledge)
+  - 2 knowledge docs: catalogo congelados + recetas
+  - 15 templates (antes 13): +2 HORECA, 6 existentes reescritos (cobertura geografica, links)
+  - 7 extract fields limpios (antes 10 con redundancias): nombre_negocio, nombre_contacto, telefono, email, ubicacion, tipo_negocio, productos_interes
+  - Eliminada categoria "need_human" espuria en prod
+- **Prompt de clasificacion mejorado**: `needs_human` ya NO escala por falta de cualificacion (B2B vs B2C). En su lugar, el agente responde la pregunta y anade pregunta de cualificacion automaticamente
+- **Knowledge prompt con cualificacion**: cuando el tipo de usuario es desconocido, la respuesta generada incluye pregunta de cualificacion al final ("¿Tienes un negocio o es para consumo personal?")
+- **PDF upload limit**: validacion frontend 3MB (limite real Vercel serverless 4.5MB con expansion base64)
 
 ## Novedades (2026-03-09)
 - **Composio integrado**: modulo `lib/composio.ts`, tabla `composio_connections`, endpoint admin CRUD
@@ -42,16 +52,16 @@
 - Schema extendido: 5 tablas agent + composio_connections
 
 ## Pendiente
-1. **Deploy a produccion**: push a master con las nuevas features, configurar `COMPOSIO_API_KEY` + `COMPOSIO_AUTH_CONFIG_ID` en Vercel env vars
-2. **Policy engine completo**: portar logica de stages/flags/policy_rules desde flowlab-agent (max_interactions ya implementado)
-3. **Dashboard de conversaciones**: vista detallada de leads con historial de mensajes
-4. **Cron automatico**: Vercel Cron o webhook de Composio para ejecutar ciclo sin boton manual
+1. **Policy engine completo**: portar logica de stages/flags/policy_rules desde flowlab-agent (max_interactions ya implementado)
+2. **Dashboard de conversaciones**: vista detallada de leads con historial de mensajes
+3. **Cron automatico**: Vercel Cron o webhook de Composio para ejecutar ciclo sin boton manual
+4. **Catalogo completo IberoExpress**: anadir producto seco al knowledge doc (solo congelados por ahora)
 
 ## Tenants en produccion
 | Tenant | Email | Flow | Contexto | agent_config |
 |---|---|---|---|---|
 | Test | test@test.com | Soporte Tecnico | Tenant de pruebas | instagram, 5 stages |
-| IberoExpress | ibero@test.com | Leads Organicos (inbound) | Distribucion de alimentos, 8 cats, 13 tpls, knowledge base ready | — |
+| IberoExpress | ibero@test.com | Leads Organicos (inbound) | 11 cats (2 knowledge), 15 tpls, 2 knowledge docs, 7 fields | — |
 
 ## Conexiones Composio (local)
 | Tenant | Channel | Account ID | Platform Username |

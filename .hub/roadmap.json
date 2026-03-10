@@ -49,7 +49,7 @@
       "title": "Knowledge Base por flow",
       "status": "done",
       "due": null,
-      "notes": "Documentos de referencia (PDF/texto) a nivel de flow. Categorias con mode=knowledge generan respuestas libres consultando docs via Gemini multimodal. Pipeline de 2 pasos (clasificar → generar). UI completa: upload PDF, texto editable, toggle mode en categorias. Funciona en simulacion y produccion."
+      "notes": "Documentos de referencia (PDF/texto) a nivel de flow. Categorias con mode=knowledge generan respuestas libres consultando docs via Gemini multimodal. Pipeline de 2 pasos (clasificar → generar). UI completa: upload PDF, texto editable, toggle mode en categorias. Funciona en simulacion y produccion. IberoExpress reconfigurado: 11 cats (2 knowledge), 2 docs, 15 tpls, 7 fields. Prompt mejorado: no escala needs_human por falta de cualificacion, incluye pregunta B2B/B2C automatica."
     },
     {
       "id": "m8",
