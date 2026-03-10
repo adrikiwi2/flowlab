@@ -166,8 +166,20 @@ export function SimulationPanel({
 
       const result: InferenceResult = await res.json();
 
-      // Insert suggested template as role A message and link inference
-      if (result.suggested_template_id && templates) {
+      // Insert response as role A message and link inference
+      if (result.generated_response) {
+        // Knowledge-based generated response
+        const msgId = nanoid();
+        const msg: SimMessage = {
+          id: msgId,
+          role: "a",
+          body: result.generated_response,
+          timestamp: new Date().toISOString(),
+        };
+        setMessages((prev) => [...prev, msg]);
+        setInferenceByMsgId((prev) => ({ ...prev, [msgId]: result }));
+        setExpandedResults((prev) => new Set(prev).add(msgId));
+      } else if (result.suggested_template_id && templates) {
         const tpl = templates.find((t) => t.id === result.suggested_template_id);
         if (tpl) {
           const msgId = nanoid();

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { getFlowById } from "@/lib/db";
+import { getFlowById, getKnowledgeDocsWithContent } from "@/lib/db";
 import { getTenantId } from "@/lib/get-tenant";
-import { classifyConversation } from "@/lib/router";
+import { classifyConversation, generateKnowledgeResponse } from "@/lib/router";
 import type { SimMessage } from "@/lib/types";
 
 export async function POST(request: Request) {
@@ -33,6 +33,20 @@ export async function POST(request: Request) {
 
   try {
     const result = await classifyConversation(flow, messages);
+
+    // If detected category has mode="knowledge", generate a knowledge-based response
+    const detectedCategory = flow.categories.find(
+      (c) => c.name === result.detected_status
+    );
+    if (detectedCategory?.mode === "knowledge" && !result.needs_human) {
+      const docs = await getKnowledgeDocsWithContent(flow_id);
+      if (docs.length > 0) {
+        const generatedText = await generateKnowledgeResponse(flow, messages, docs);
+        result.generated_response = generatedText;
+        result.suggested_template_id = null;
+      }
+    }
+
     return NextResponse.json(result);
   } catch (error) {
     const message =

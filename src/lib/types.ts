@@ -28,6 +28,18 @@ export interface Category {
   color: string;
   rules: string;
   sort_order: number;
+  mode: "template" | "knowledge";
+}
+
+export interface KnowledgeDoc {
+  id: string;
+  flow_id: string;
+  name: string;
+  doc_type: "pdf" | "text";
+  content_text: string | null;
+  content_pdf_b64: string | null;
+  sort_order: number;
+  created_at: string;
 }
 
 export interface ExtractField {
@@ -72,10 +84,12 @@ export interface InferenceResult {
   needs_human_reason: string | null;
   extracted_info: Record<string, string | null>;
   suggested_template_id?: string | null;
+  generated_response?: string | null;
 }
 
 export interface FlowWithDetails extends Flow {
   categories: Category[];
   extract_fields: ExtractField[];
   templates: Template[];
+  knowledge_docs: KnowledgeDoc[];
 }

@@ -46,13 +46,20 @@
     },
     {
       "id": "m7",
+      "title": "Knowledge Base por flow",
+      "status": "done",
+      "due": null,
+      "notes": "Documentos de referencia (PDF/texto) a nivel de flow. Categorias con mode=knowledge generan respuestas libres consultando docs via Gemini multimodal. Pipeline de 2 pasos (clasificar → generar). UI completa: upload PDF, texto editable, toggle mode en categorias. Funciona en simulacion y produccion."
+    },
+    {
+      "id": "m8",
       "title": "Policy engine completo",
       "status": "planned",
       "due": null,
       "notes": "Portar logica de policy_engine.py: policy_rules en orden, flags, advance_to. max_interactions ya implementado como hard limit en agent-cycle.ts."
     },
     {
-      "id": "m8",
+      "id": "m9",
       "title": "Dashboard de conversaciones",
       "status": "planned",
       "due": null,

@@ -548,7 +548,7 @@ function OutboxCard({
           <div className="mb-1.5 flex items-center gap-1.5">
             <MessageSquare size={12} className="text-accent" />
             <span className="text-[10px] font-semibold uppercase tracking-widest text-accent">
-              {template ? template.name : "Message to send"}
+              {payload.generated ? "AI Generated" : template ? template.name : "Message to send"}
             </span>
           </div>
           <p className="text-[11px] leading-relaxed text-text-primary">

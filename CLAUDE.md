@@ -27,7 +27,8 @@ src/
       categories/         # CRUD categories
       extract-fields/     # CRUD extract fields
       templates/          # CRUD templates
-      inference/          # POST — clasificacion con Gemini
+      inference/          # POST — clasificacion con Gemini + knowledge response
+      knowledge-docs/     # CRUD knowledge documents (PDF upload, text)
       simulations/        # CRUD simulations
       leads/              # GET leads, POST resolve
       outbox/             # GET pending, POST approve/reject
@@ -35,7 +36,7 @@ src/
     login/                # Login page
   components/
     sidebar.tsx           # Panel lateral colapsable (minimizado por defecto)
-    flow-designer.tsx     # Categorias + templates inline + extract fields
+    flow-designer.tsx     # Categorias + templates inline + extract fields + knowledge base
     simulation-panel.tsx  # Chat simulado + inferencia multiple + persistencia
     live-panel.tsx        # Pestana Live: connect instagram, publish toggle, scan inbox, approval queue, needs_human, leads table
     ai-result-card.tsx    # Tarjeta resultado inferencia (colapsable con ?) + banner needs_human
@@ -46,8 +47,8 @@ src/
     db.ts                 # Conexion SQLite, schema, queries, migraciones
     auth.ts               # JWT sign/verify, cookies
     get-tenant.ts         # Extraer tenant_id de cookie o Bearer header
-    router.ts             # classifyConversation() — llama a Gemini
-    prompt-builder.ts     # Construye prompt con categorias, templates, fields + needs_human
+    router.ts             # classifyConversation() + generateKnowledgeResponse() — llama a Gemini
+    prompt-builder.ts     # Construye prompt con categorias, templates, fields + needs_human + knowledge
     composio.ts           # Cliente Composio: listConversations, listMessages, sendTextMessage, initiateConnection
     agent-cycle.ts        # Ciclo de ejecucion: poll → import → inference → enqueue outbox
     types.ts              # Interfaces TypeScript
@@ -58,7 +59,8 @@ src/
 ### Core (diseno de flujos)
 - **Tenant** → tiene muchos Flows (aislamiento total)
 - **Flow** → tiene Categories, ExtractFields, Templates, Simulations. Columnas `agent_config` (JSON, nullable, admin-only) e `is_published` (boolean).
-- **Category** → reglas de clasificacion, color. Tiene Templates asociados.
+- **Category** → reglas de clasificacion, color, mode (`template`|`knowledge`). Tiene Templates asociados.
+- **KnowledgeDoc** → documento de referencia (PDF o texto plano) vinculado a un Flow. Usado por categorias en mode `knowledge`.
 - **Template** → body con variables {{var}}, vinculado a una Category
 - **ExtractField** → campo que Gemini debe extraer de la conversacion
 - **Simulation** → mensajes (JSON blob) + mapa de inferencias (msgId → InferenceResult)
@@ -85,8 +87,9 @@ El pipeline es identico en simulacion y en produccion:
 1. Mensajes (simulados o reales via Composio) se formatean como `SimMessage[]`
 2. `prompt-builder.ts` construye prompt con: system_prompt + conversacion + reglas + templates + fields + instruccion needs_human + usedTemplateIds (para no repetir)
 3. Gemini responde JSON: `{ detected_status, reasoning, needs_human, needs_human_reason, extracted_info, suggested_template_id }`
-4. En simulacion: resultado se muestra en UI
-5. En produccion: si needs_human → escalar lead. Si suggested_template → encolar en outbox para aprobacion humana.
+4. Si la categoria detectada tiene `mode=knowledge`: segundo paso genera respuesta libre consultando knowledge_docs (PDFs como inline_data + textos en prompt)
+5. En simulacion: resultado se muestra en UI (template o respuesta generada)
+6. En produccion: si needs_human → escalar lead. Si suggested_template o generated_response → encolar en outbox para aprobacion humana.
 
 ## Ciclo de ejecucion (agent-cycle.ts)
 
@@ -98,8 +101,9 @@ Para cada flow publicado con composio_connection activa:
 4. Hard limit: si `inbound_count >= agent_config.max_interactions` → escalar a needs_human
 5. Si hay nuevos inbound y lead NO esta en `needs_human`: ejecutar `classifyConversation()` con `usedTemplateIds`
 6. Si `needs_human` → marcar lead, no responder
-7. Si `suggested_template_id` → encolar en outbox como `pending` (human-in-the-loop)
-8. Humano aprueba/rechaza desde la pestana Live
+7. Si categoria es `knowledge` mode → generar respuesta con knowledge_docs → encolar en outbox como `pending`
+8. Si `suggested_template_id` → encolar en outbox como `pending` (human-in-the-loop)
+9. Humano aprueba/rechaza desde la pestana Live
 
 Trigger: boton "Scan Inbox" en UI (POST /api/flows/:id/scan) o admin cron (POST /api/admin/agent-cycle).
 
@@ -145,3 +149,6 @@ npm run lint      # ESLint
 - OAuth self-service: `POST /api/connect-instagram` genera magic link via Composio, callback guarda la conexion. Env var `COMPOSIO_AUTH_CONFIG_ID` requerida.
 - `max_interactions` hard limit: implementado directamente en agent-cycle.ts, no requiere policy engine
 - Template non-repetition: prompt-builder recibe `usedTemplateIds` para instruir al LLM a no re-sugerir
+- Knowledge Base: documentos (PDF/texto) a nivel de flow. Categorias con `mode=knowledge` generan respuesta libre consultando docs via Gemini multimodal
+- PDFs se almacenan como base64 en `knowledge_docs.content_pdf_b64` (SQLite TEXT). Gemini los recibe como `inlineData` (soporte nativo PDF)
+- El toggle de mode solo aparece en categorias cuando el flow tiene al menos un knowledge doc

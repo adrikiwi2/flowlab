@@ -5,7 +5,7 @@
  */
 
 import { nanoid } from "nanoid";
-import { classifyConversation } from "./router";
+import { classifyConversation, generateKnowledgeResponse } from "./router";
 import {
   getPublishedFlows,
   getFlowById,
@@ -16,6 +16,7 @@ import {
   getMessagesByLead,
   updateLeadNeedsHuman,
   createOutboxItem,
+  getKnowledgeDocsWithContent,
 } from "./db";
 import {
   listConversations,
@@ -202,6 +203,33 @@ async function processConversation(
   if (result.needs_human) {
     await updateLeadNeedsHuman(lead.id, true, result.needs_human_reason);
     return; // Don't auto-respond
+  }
+
+  // Check if detected category uses knowledge mode
+  const detectedCategory = flow.categories.find(
+    (c) => c.name === result.detected_status
+  );
+  if (detectedCategory?.mode === "knowledge") {
+    const docs = await getKnowledgeDocsWithContent(flow.id);
+    if (docs.length > 0) {
+      const generatedText = await generateKnowledgeResponse(flow, simMessages, docs);
+      await createOutboxItem({
+        id: nanoid(),
+        lead_id: lead.id,
+        channel: conn.channel,
+        action: "send_text",
+        payload_json: JSON.stringify({
+          composio_user_id: conn.composio_user_id,
+          recipient_id: leadHandle,
+          text: generatedText,
+          generated: true,
+          inference_result: result,
+        }),
+        idempotency_key: `${lead.id}:${allMsgs[allMsgs.length - 1]?.id}`,
+      });
+      log.messagesSent++;
+    }
+    return;
   }
 
   // Queue suggested template for approval (not auto-sent)

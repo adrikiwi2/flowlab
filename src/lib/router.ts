@@ -2,8 +2,9 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import {
   buildClassificationPrompt,
   buildConversationHistory,
+  buildKnowledgePrompt,
 } from "./prompt-builder";
-import type { FlowWithDetails, SimMessage, InferenceResult } from "./types";
+import type { FlowWithDetails, SimMessage, InferenceResult, KnowledgeDoc } from "./types";
 
 export async function classifyConversation(
   flow: FlowWithDetails,
@@ -50,4 +51,46 @@ export async function classifyConversation(
     extracted_info: parsed.extracted_info ?? {},
     suggested_template_id: parsed.suggested_template_id ?? null,
   } as InferenceResult;
+}
+
+export async function generateKnowledgeResponse(
+  flow: FlowWithDetails,
+  messages: SimMessage[],
+  docs: KnowledgeDoc[]
+): Promise<string> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey || apiKey === "your_gemini_api_key_here") {
+    throw new Error("GEMINI_API_KEY not configured in .env.local");
+  }
+
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite-preview" });
+
+  const historyString = buildConversationHistory(
+    messages,
+    flow.role_a_label,
+    flow.role_b_label
+  );
+
+  // Build multimodal parts: PDFs as inline data, text docs in prompt
+  const textDocs = docs.filter((d) => d.doc_type === "text");
+  const pdfDocs = docs.filter((d) => d.doc_type === "pdf" && d.content_pdf_b64);
+
+  const parts: ({ inlineData: { mimeType: string; data: string } } | { text: string })[] = [];
+
+  for (const pdf of pdfDocs) {
+    parts.push({
+      inlineData: {
+        mimeType: "application/pdf",
+        data: pdf.content_pdf_b64!,
+      },
+    });
+  }
+
+  parts.push({
+    text: buildKnowledgePrompt(flow, historyString, textDocs),
+  });
+
+  const result = await model.generateContent(parts);
+  return result.response.text();
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageSquare, AlertTriangle } from "lucide-react";
+import { MessageSquare, AlertTriangle, BookOpen } from "lucide-react";
 import type { InferenceResult, Category, Template } from "@/lib/types";
 
 interface AiResultCardProps {
@@ -77,8 +77,23 @@ export function AiResultCard({ result, categories, templates }: AiResultCardProp
             {result.reasoning}
           </p>
 
+          {/* Generated Knowledge Response */}
+          {result.generated_response && (
+            <div className="mb-3 rounded-lg border border-emerald-500/15 bg-emerald-500/5 p-3">
+              <div className="mb-1.5 flex items-center gap-1.5">
+                <BookOpen size={12} className="text-emerald-400" />
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-emerald-400">
+                  Knowledge Response
+                </span>
+              </div>
+              <p className="text-[11px] leading-relaxed text-text-primary">
+                {result.generated_response}
+              </p>
+            </div>
+          )}
+
           {/* Suggested Template */}
-          {suggestedTemplate && (
+          {suggestedTemplate && !result.generated_response && (
             <div className="mb-3 rounded-lg border border-accent/15 bg-accent/5 p-3">
               <div className="mb-1.5 flex items-center gap-1.5">
                 <MessageSquare size={12} className="text-accent" />

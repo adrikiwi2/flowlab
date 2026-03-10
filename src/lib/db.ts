@@ -7,6 +7,7 @@ import type {
   Template,
   Simulation,
   FlowWithDetails,
+  KnowledgeDoc,
 } from "./types";
 import type { ComposioConnection } from "./composio";
 
@@ -154,6 +155,17 @@ export async function initSchema() {
       event_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS knowledge_docs (
+      id TEXT PRIMARY KEY,
+      flow_id TEXT NOT NULL REFERENCES flows(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      doc_type TEXT DEFAULT 'text',
+      content_text TEXT DEFAULT NULL,
+      content_pdf_b64 TEXT DEFAULT NULL,
+      sort_order INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS composio_connections (
       id TEXT PRIMARY KEY,
       tenant_id TEXT NOT NULL REFERENCES tenants(id),
@@ -179,6 +191,7 @@ export async function initSchema() {
   const migrations = [
     "ALTER TABLE flows ADD COLUMN agent_config TEXT DEFAULT NULL",
     "ALTER TABLE flows ADD COLUMN is_published INTEGER DEFAULT 0",
+    "ALTER TABLE categories ADD COLUMN mode TEXT DEFAULT 'template'",
   ];
   for (const sql of migrations) {
     try { await db.execute(sql); } catch { /* column already exists */ }
@@ -249,13 +262,14 @@ export async function getFlowById(id: string, tenantId: string): Promise<FlowWit
   const flow = flowRs.rows[0] as unknown as Flow | undefined;
   if (!flow) return null;
 
-  const [catRs, fieldRs, tplRs] = await Promise.all([
+  const [catRs, fieldRs, tplRs, kdRs] = await Promise.all([
     c.execute({
       sql: "SELECT * FROM categories WHERE flow_id = ? ORDER BY sort_order, created_at",
       args: [id],
     }),
     c.execute({ sql: "SELECT * FROM extract_fields WHERE flow_id = ?", args: [id] }),
     c.execute({ sql: "SELECT * FROM templates WHERE flow_id = ? ORDER BY created_at", args: [id] }),
+    c.execute({ sql: "SELECT id, flow_id, name, doc_type, sort_order, created_at FROM knowledge_docs WHERE flow_id = ? ORDER BY sort_order, created_at", args: [id] }),
   ]);
 
   return {
@@ -263,6 +277,7 @@ export async function getFlowById(id: string, tenantId: string): Promise<FlowWit
     categories: catRs.rows as unknown as Category[],
     extract_fields: fieldRs.rows as unknown as ExtractField[],
     templates: tplRs.rows as unknown as Template[],
+    knowledge_docs: kdRs.rows as unknown as KnowledgeDoc[],
   };
 }
 
@@ -345,7 +360,7 @@ export async function createCategory(
 
 export async function updateCategory(
   id: string,
-  data: Partial<Pick<Category, "name" | "color" | "rules" | "sort_order">>,
+  data: Partial<Pick<Category, "name" | "color" | "rules" | "sort_order" | "mode">>,
   tenantId: string
 ): Promise<Category | null> {
   const c = await db();
@@ -901,4 +916,102 @@ export async function getLeadsByFlow(flowId: string): Promise<Lead[]> {
     args: [flowId],
   });
   return rs.rows as unknown as Lead[];
+}
+
+// --- Knowledge Docs ---
+
+export async function getKnowledgeDocsByFlow(flowId: string, tenantId: string): Promise<KnowledgeDoc[]> {
+  const c = await db();
+  const check = await c.execute({
+    sql: "SELECT id FROM flows WHERE id = ? AND tenant_id = ?",
+    args: [flowId, tenantId],
+  });
+  if (check.rows.length === 0) return [];
+  const rs = await c.execute({
+    sql: "SELECT * FROM knowledge_docs WHERE flow_id = ? ORDER BY sort_order, created_at",
+    args: [flowId],
+  });
+  return rs.rows as unknown as KnowledgeDoc[];
+}
+
+export async function getKnowledgeDocById(id: string, tenantId: string): Promise<KnowledgeDoc | null> {
+  const c = await db();
+  const rs = await c.execute({
+    sql: "SELECT * FROM knowledge_docs WHERE id = ? AND flow_id IN (SELECT id FROM flows WHERE tenant_id = ?)",
+    args: [id, tenantId],
+  });
+  return (rs.rows[0] as unknown as KnowledgeDoc) ?? null;
+}
+
+export async function createKnowledgeDoc(
+  data: { id: string; flow_id: string; name: string; doc_type: string; content_text?: string; content_pdf_b64?: string },
+  tenantId: string
+): Promise<KnowledgeDoc | null> {
+  const c = await db();
+  const check = await c.execute({
+    sql: "SELECT id FROM flows WHERE id = ? AND tenant_id = ?",
+    args: [data.flow_id, tenantId],
+  });
+  if (check.rows.length === 0) return null;
+
+  const maxRs = await c.execute({
+    sql: "SELECT COALESCE(MAX(sort_order), -1) as max_order FROM knowledge_docs WHERE flow_id = ?",
+    args: [data.flow_id],
+  });
+  const maxOrder = (maxRs.rows[0] as unknown as { max_order: number }).max_order;
+
+  await c.execute({
+    sql: "INSERT INTO knowledge_docs (id, flow_id, name, doc_type, content_text, content_pdf_b64, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    args: [data.id, data.flow_id, data.name, data.doc_type, data.content_text || null, data.content_pdf_b64 || null, maxOrder + 1],
+  });
+  const rs = await c.execute({ sql: "SELECT id, flow_id, name, doc_type, sort_order, created_at FROM knowledge_docs WHERE id = ?", args: [data.id] });
+  return rs.rows[0] as unknown as KnowledgeDoc;
+}
+
+export async function updateKnowledgeDoc(
+  id: string,
+  data: Partial<Pick<KnowledgeDoc, "name" | "content_text">>,
+  tenantId: string
+): Promise<KnowledgeDoc | null> {
+  const c = await db();
+  const check = await c.execute({
+    sql: "SELECT id FROM knowledge_docs WHERE id = ? AND flow_id IN (SELECT id FROM flows WHERE tenant_id = ?)",
+    args: [id, tenantId],
+  });
+  if (check.rows.length === 0) return null;
+
+  const fields: string[] = [];
+  const values: (string | number | null)[] = [];
+  for (const [key, value] of Object.entries(data)) {
+    if (value !== undefined) {
+      fields.push(`${key} = ?`);
+      values.push(value as string);
+    }
+  }
+  if (fields.length === 0) {
+    const rs = await c.execute({ sql: "SELECT id, flow_id, name, doc_type, sort_order, created_at FROM knowledge_docs WHERE id = ?", args: [id] });
+    return rs.rows[0] as unknown as KnowledgeDoc;
+  }
+  values.push(id);
+  await c.execute({ sql: `UPDATE knowledge_docs SET ${fields.join(", ")} WHERE id = ?`, args: values });
+  const rs = await c.execute({ sql: "SELECT id, flow_id, name, doc_type, sort_order, created_at FROM knowledge_docs WHERE id = ?", args: [id] });
+  return rs.rows[0] as unknown as KnowledgeDoc;
+}
+
+export async function deleteKnowledgeDoc(id: string, tenantId: string): Promise<boolean> {
+  const c = await db();
+  const rs = await c.execute({
+    sql: "DELETE FROM knowledge_docs WHERE id = ? AND flow_id IN (SELECT id FROM flows WHERE tenant_id = ?)",
+    args: [id, tenantId],
+  });
+  return rs.rowsAffected > 0;
+}
+
+export async function getKnowledgeDocsWithContent(flowId: string): Promise<KnowledgeDoc[]> {
+  const c = await db();
+  const rs = await c.execute({
+    sql: "SELECT * FROM knowledge_docs WHERE flow_id = ? ORDER BY sort_order, created_at",
+    args: [flowId],
+  });
+  return rs.rows as unknown as KnowledgeDoc[];
 }

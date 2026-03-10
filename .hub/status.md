@@ -1,4 +1,4 @@
-# Estado del proyecto — 2026-03-09
+# Estado del proyecto — 2026-03-10
 
 ## Situacion actual
 - MVP local **completo**: auth, flow designer, simulacion con inferencia Gemini
@@ -10,6 +10,15 @@
 ## Cambio de arquitectura (2026-03-09)
 - **flowlab-agent descartado**: la app local (FastAPI + PyInstaller + CDP/Playwright) se abandona
 - **Composio como canal de ejecucion**: SDK `@composio/core` server-side para leer/enviar DMs de Instagram via API
+
+## Novedades (2026-03-10)
+- **Knowledge Base**: nueva tabla `knowledge_docs` para documentos de referencia (PDF o texto plano) a nivel de flow
+- **Category mode**: categorias ahora tienen `mode` (`template`|`knowledge`). En modo knowledge, el agente genera respuestas libres consultando los documentos del flow en vez de sugerir templates
+- **Pipeline de 2 pasos**: clasificacion (existente) + generacion con knowledge (nuevo). Gemini recibe PDFs como `inlineData` multimodal y textos en prompt
+- **UI Knowledge Base**: seccion en Designer para subir PDFs y crear documentos de texto. Toggle de mode en cada categoria (solo visible si hay docs)
+- **Simulation + Live**: respuestas generadas se muestran como "Knowledge Response" en result cards y "AI Generated" en outbox
+- **API**: `GET/POST /api/knowledge-docs`, `GET/PUT/DELETE /api/knowledge-docs/:docId`
+- **InferenceResult ampliado**: nuevo campo `generated_response` para respuestas de knowledge mode
 
 ## Novedades (2026-03-09)
 - **Composio integrado**: modulo `lib/composio.ts`, tabla `composio_connections`, endpoint admin CRUD
@@ -42,7 +51,7 @@
 | Tenant | Email | Flow | Contexto | agent_config |
 |---|---|---|---|---|
 | Test | test@test.com | Soporte Tecnico | Tenant de pruebas | instagram, 5 stages |
-| IberoExpress | ibero@test.com | Leads Organicos (inbound) | Distribucion de alimentos, 8 cats, 13 tpls, 10 fields | — |
+| IberoExpress | ibero@test.com | Leads Organicos (inbound) | Distribucion de alimentos, 8 cats, 13 tpls, knowledge base ready | — |
 
 ## Conexiones Composio (local)
 | Tenant | Channel | Account ID | Platform Username |

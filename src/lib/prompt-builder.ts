@@ -1,4 +1,4 @@
-import type { Flow, Category, ExtractField, Template, SimMessage } from "./types";
+import type { Flow, Category, ExtractField, Template, SimMessage, KnowledgeDoc } from "./types";
 
 export function buildConversationHistory(
   messages: SimMessage[],
@@ -87,4 +87,29 @@ IMPORTANT:
 - suggested_template_id MUST be a template id from the detected category that best matches the current point in the conversation, or null. If needs_human is true, suggested_template_id should be null
 - NEVER suggest a template that has already been used in this conversation${usedTemplateIds.length > 0 ? `. Already used template IDs: ${usedTemplateIds.join(", ")}` : ""}` : ""}
 - Respond ONLY with the JSON object, no additional text`;
+}
+
+export function buildKnowledgePrompt(
+  flow: Flow,
+  conversationHistory: string,
+  textDocs: KnowledgeDoc[]
+): string {
+  const textDocsSection = textDocs
+    .filter((d) => d.doc_type === "text" && d.content_text)
+    .map((d) => `--- DOCUMENT: ${d.name} ---\n${d.content_text}\n--- END ---`)
+    .join("\n\n");
+
+  return `${flow.system_prompt || "You are a helpful assistant."}
+
+CONVERSATION:
+${conversationHistory}
+
+${textDocsSection ? `REFERENCE DOCUMENTS:\n${textDocsSection}\n` : ""}
+Using the reference documents and any attached files as your knowledge base, generate a response for the last message in the conversation.
+- Respond ONLY with information present in the provided documents
+- If the information is not available, say so honestly and offer alternatives if any exist in the documents
+- Match the tone and language of the conversation
+- Be concise (direct message format, not email)
+
+Respond ONLY with the message text, no JSON or extra formatting.`;
 }
