@@ -12,6 +12,8 @@
 - **Composio como canal de ejecucion**: SDK `@composio/core` server-side para leer/enviar DMs de Instagram via API
 
 ## Novedades (2026-03-10)
+- **Light/Dark theme**: toggle en sidebar (Sol/Luna) via `next-themes`. Paleta light completa con CSS variables. Persiste en localStorage, respeta `prefers-color-scheme`. Todos los componentes se adaptan automaticamente via tokens semanticos (`bg-base-*`, `text-text-*`, etc.). Clave: usar `@theme` (no `@theme inline`) en Tailwind v4 para que las utilidades referencien `var()` y las overrides de `html.light` cascadeen correctamente.
+- **Sidebar de simulaciones colapsable**: panel de lista de simulations minimizable a 40px con icono toggle (`PanelLeftClose`/`PanelLeftOpen`). Chat area ocupa todo el ancho al colapsar.
 - **Knowledge Base**: nueva tabla `knowledge_docs` para documentos de referencia (PDF o texto plano) a nivel de flow
 - **Category mode**: categorias ahora tienen `mode` (`template`|`knowledge`). En modo knowledge, el agente genera respuestas libres consultando los documentos del flow en vez de sugerir templates
 - **Pipeline de 2 pasos**: clasificacion (existente) + generacion con knowledge (nuevo). Gemini recibe PDFs como `inlineData` multimodal y textos en prompt
@@ -52,16 +54,19 @@
 - Schema extendido: 5 tablas agent + composio_connections
 
 ## Pendiente
-1. **Policy engine completo**: portar logica de stages/flags/policy_rules desde flowlab-agent (max_interactions ya implementado)
-2. **Dashboard de conversaciones**: vista detallada de leads con historial de mensajes
-3. **Cron automatico**: Vercel Cron o webhook de Composio para ejecutar ciclo sin boton manual
-4. **Catalogo completo IberoExpress**: anadir producto seco al knowledge doc (solo congelados por ahora)
+1. **🔴 Flow "Leads Telegram" para Tradingpro**: nuevo flow inbound via ads IG/FB → Telegram. Gancho: 3 meses gratis canal privado. Pendiente: ejemplos de interacciones reales del cliente + resolver preguntas de diseño (tono, escalacion, knowledge vs templates). Ver [task](tasks/tradingpro-telegram-flow.md) y [contexto](tasks/tradingpro-flow-context.md)
+2. **Policy engine completo**: portar logica de stages/flags/policy_rules desde flowlab-agent (max_interactions ya implementado)
+3. **Dashboard de conversaciones**: vista detallada de leads con historial de mensajes
+4. **Cron automatico**: Vercel Cron o webhook de Composio para ejecutar ciclo sin boton manual
+5. **Catalogo completo IberoExpress**: anadir producto seco al knowledge doc (solo congelados por ahora)
 
 ## Tenants en produccion
 | Tenant | Email | Flow | Contexto | agent_config |
 |---|---|---|---|---|
 | Test | test@test.com | Soporte Tecnico | Tenant de pruebas | instagram, 5 stages |
 | IberoExpress | ibero@test.com | Leads Organicos (inbound) | 11 cats (2 knowledge), 15 tpls, 2 knowledge docs, 7 fields | — |
+| Tradingpro | tradingpro@test.com | Outreach Inversiones (existente, no publicado) | 7 cats (template), 7 tpls, 8 fields, 0 knowledge docs | — |
+| Tradingpro | tradingpro@test.com | Leads Telegram (PENDIENTE) | Flow nuevo: inbound via ads → Telegram. En diseño | — |
 
 ## Conexiones Composio (local)
 | Tenant | Channel | Account ID | Platform Username |

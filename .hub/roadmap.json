@@ -67,7 +67,7 @@
     }
   ],
   "principles": [
-    "Dark theme, sin librerias de componentes, Tailwind puro",
+    "Dark/Light theme via next-themes, sin librerias de componentes, Tailwind puro",
     "Edicion inline con blur-to-save",
     "Aislamiento total por tenant via JWT cookie + Bearer token",
     "SQLite local en dev, Turso en prod (mismo driver @libsql/client)",
