@@ -1,4 +1,4 @@
-# Estado del proyecto — 2026-03-10
+# Estado del proyecto — 2026-03-12
 
 ## Situacion actual
 - MVP local **completo**: auth, flow designer, simulacion con inferencia Gemini
@@ -54,8 +54,10 @@
 - Schema extendido: 5 tablas agent + composio_connections
 
 ## Novedades (2026-03-12)
-- **Flow "Agente Comercial (pedidos)" para IberoExpress**: flow de procesamiento de pedidos B2B. 9 categorias (4 knowledge: pedido nuevo, stock, precio, repetir pedido + 5 template). 2 knowledge docs mock simulando datos SAP (catalogo 30 productos + 8 clientes con historial). 6 extract fields. Listo para demo desde Simulate.
+- **Flow "Agente Comercial (pedidos)" para IberoExpress**: flow de procesamiento de pedidos B2B. Simula el agente comercial que recibe pedidos de clientes por WhatsApp/email, extrae productos, consulta catalogo mock (30 productos con codigos SAP, precios, stock) e historial (8 clientes con ultimos pedidos), y genera propuesta estructurada para aprobacion humana. 9 categorias (4 knowledge + 5 template), 9 templates, 2 knowledge docs mock SAP, 6 extract fields. SAP real pendiente de integracion (Service Layer API).
 - **suggested_stage en inferencia**: nuevo campo en InferenceResult. El LLM sugiere en que stage del proceso esta la conversacion (recepcion, extraccion, validacion, propuesta...). Se muestra como badge violeta en la AI Result Card. Preparatorio para feature de stages en flow designer.
+- **Knowledge prompt desacoplado de cualificacion B2B/B2C**: la instruccion de preguntar "¿tienes un negocio?" se ha movido de `prompt-builder.ts` (hardcoded, afectaba a todos los flows) al system prompt del flow Leads Organicos (donde corresponde). Esto permite que cada flow controle su propio comportamiento de cualificacion.
+- **System prompt Agente Comercial optimizado**: el agente sabe que el cliente ya esta identificado (nombre, empresa, codigo SAP, historial). No pregunta quien es, no explica sus pasos internos, escribe como el comercial humano. Rules de categorias knowledge actualizadas para reforzar esto.
 
 ## Pendiente
 1. **🔴 Flow "Leads Telegram" para Tradingpro**: nuevo flow inbound via ads IG/FB → Telegram. Gancho: 3 meses gratis canal privado. Pendiente: ejemplos de interacciones reales del cliente + resolver preguntas de diseño (tono, escalacion, knowledge vs templates). Ver [task](tasks/tradingpro-telegram-flow.md) y [contexto](tasks/tradingpro-flow-context.md)
@@ -63,7 +65,8 @@
 3. **Dashboard de conversaciones**: vista detallada de leads con historial de mensajes
 4. **Cron automatico**: Vercel Cron o webhook de Composio para ejecutar ciclo sin boton manual
 5. **Catalogo completo IberoExpress**: anadir producto seco al knowledge doc (solo congelados por ahora)
-6. **Tradingpro backlog** (baja prioridad): 5 flows futuros — seguidores IG, LinkedIn (contactos/likes/visitas), WhatsApp seguimiento clientes, automatizacion RRSS, prospeccion afiliados. Ver [backlog](tasks/tradingpro-future-flows.md)
+6. **Stages en flow designer**: feature nueva — definir stages por flow (UI), categories condicionadas por stage, transiciones explicitas. Desbloquea flows multi-paso como el Agente Comercial (recepcion → extraccion → validacion → propuesta → aprobado)
+7. **Tradingpro backlog** (baja prioridad): 4 flows futuros — seguidores IG, LinkedIn (contactos/likes/visitas), WhatsApp seguimiento clientes, prospeccion afiliados. Ver [backlog](tasks/tradingpro-future-flows.md)
 
 ## Tenants en produccion
 | Tenant | Email | Flow | Contexto | agent_config |

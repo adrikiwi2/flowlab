@@ -112,7 +112,6 @@ Using the reference documents and any attached files as your knowledge base, gen
 - If the information is not available, say so honestly and offer alternatives if any exist in the documents
 - Match the tone and language of the conversation
 - Be concise (direct message format, not email)
-- If the conversation does not yet reveal whether the user is a business (store, restaurant, distributor) or an end consumer, answer their question AND end with a brief qualifying question like "¿Tienes un negocio o es para consumo personal?"
 
 Respond ONLY with the message text, no JSON or extra formatting.`;
 }
