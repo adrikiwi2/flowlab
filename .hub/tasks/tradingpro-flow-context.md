@@ -85,6 +85,10 @@ Documento de referencia con toda la info de productos y servicios de TradingPro,
 - Incluye: TradingRoom diaria con Álvaro y José, portfolio compartido
 - Link de registro: ❓ PENDIENTE
 
+**Nota:** Los cursos (Inversión y Trading, Mentoría) incluyen **6 meses gratuitos** del servicio de membresía (100€/mes), que incluye:
+- Comunidad privada de Telegram (informes semanales, muestra de portfolio real de José y Álvaro, explicación del proceso de toma de decisiones)
+- Trading Room diario
+
 ---
 
 ## Qué aprende el alumno (resumen general)
@@ -132,6 +136,7 @@ Documento de referencia con toda la info de productos y servicios de TradingPro,
 - Experiencia docente en universidades de prestigio (UC3M, URJC)
 - Más de 10 años de experiencia en mercados financieros
 - Colaboradores en medios: Intereconomía, Rankia, finanzas.com
+- **Abuelo Basagoiti es el fundador del Banco Hispanoamericano** — dato de autoridad útil para leads >40 años
 
 ---
 
@@ -191,6 +196,35 @@ Investment Management, Prop Trading, Risk Management, Forex, Trading algorithms,
 - Integración IBKR: https://www.darwinex.com/es/eu/ibkr
 - DarwinIA (capital semilla): https://www.darwinex.com/trading/darwinia-seed-allocation-programme
 - Darwinex Zero: https://www.darwinexzero.com/
+
+---
+
+## Cualificación de leads
+
+### Cualificación F1 — Intención
+¿Quiere **invertir** o **aprender a invertir**?
+- **Invertir** → Hablar de Darwinex: sede en España, regulada (CNMV + FCA), trabaja con Santander, etc.
+- **Aprender a invertir** → Cursos y membresía:
+  - Curso Inversión y Trading → para traders (corto plazo)
+  - Programa Mentoría Inversión → para inversores (medio y largo plazo)
+
+### Cualificación F2 — Segmentación por perfil
+En función de la edad/perfil del lead:
+- **Mayores de 40** → Hablar de los Basagoiti como familia (abuelo fundador del Banco Hispanoamericano), tradición financiera, solidez
+- **Menores de 40** → Hablar del agente de IA que analiza inversiones, tecnología, innovación
+
+---
+
+## Métricas de conversión actuales
+
+- **CPA actual:** 100€/cliente
+- **Tasa de conversión:** 10% (Jorge Batres, comercial)
+- **Ejemplo de funnel real** (80 leads de canal Telegram):
+  - 47 no responden
+  - 4 cuelgan directamente
+  - 16 en discusión / interesados
+    - **8 convertidos** (10%)
+- **Responsable comercial:** Jorge Batres (gestiona 47 clientes con cuenta en broker, hace seguimiento y upsell por WhatsApp)
 
 ---
 
