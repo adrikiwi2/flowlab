@@ -1,8 +1,10 @@
-# Crear flow "Leads Telegram" para Tradingpro
+# Flow "Leads Telegram" — Tradingpro
 
 **Prioridad:** URGENTE
 **Tenant:** Tradingpro (`xQBjnyhFY1oPtmFtDn7U5`)
-**Fecha:** 2026-03-12
+**Fecha creación:** 2026-03-12
+**Último avance:** 2026-03-19
+**Estado:** ✅ Flow creado en prod — pendiente de variables del cliente para demo
 
 ## Contexto
 
@@ -14,26 +16,25 @@ El primer gancho comercial son **3 meses gratuitos del canal privado de pago** (
 
 Ver detalle completo de productos, precios y contexto en → [tradingpro-flow-context.md](./tradingpro-flow-context.md)
 
-### Respuestas confirmadas
+### Decisiones de diseño (2026-03-19)
 1. **Ad genérico** — no menciona producto concreto
-2. **Objetivo de conversión** — ofrecer 3 meses gratis del canal privado de Telegram (de pago) como gancho. Incluye TradingRoom diaria + portfolio TradingPro
-3. **Link de registro/checkout** — ❓ PENDIENTE: ¿hay link de registro para los 3 meses gratis? ¿O se gestiona manualmente?
+2. **Objetivo de conversión** — ofrecer 3 meses gratis del canal privado + derivar a llamada comercial (link calendario de Jorge)
+3. **Tono** — tuteo informal
+4. **Escalación** — needs_human si la conversación no encaja en ninguna categoría. Objetivo principal: pasar `{{link_calendario}}` para que el comercial cierre
+5. **Templates vs Knowledge** — híbrido: knowledge para preguntas de producto, templates para momentos clave del funnel
+6. **Orden oferta** — gancho 3 meses gratis siempre primero si el lead es frío; adaptar si ya pregunta algo concreto
 
-### Pendiente de cliente
-- **Ejemplos de interacciones reales** — necesitamos que nos pasen conversaciones reales de este canal para diseñar categories y templates con precisión
-- **Link de registro para 3 meses gratis** del canal privado de Telegram
+### Pendiente de cliente (bloquea demo)
+- **`{{link_3_meses_gratis}}`** — link de registro para los 3 meses gratis del canal privado
+- **`{{link_calendario}}`** — link de Calendly o similar para reservar llamada con Jorge
 
-### Info recopilada (2026-03-12)
-- Perfiles completos de Álvaro y José Basagoiti (fundadores, hermanos, imparten clases y gestionan portfolio)
-- Info completa de Darwinex (broker recomendado, canal de ingresos por referidos)
-- Todos los links de productos, Darwinex, registro, etc. guardados en context para usar en templates
-- Ver [tradingpro-flow-context.md](./tradingpro-flow-context.md) para detalle completo
-
-### Preguntas pendientes (bloquean diseño del flow)
-4. **Tono** — ¿Tuteo informal o profesional? (el copy de la web mezcla ambos, tiende a informal)
-5. **Escalación** — ¿Escalar a humano solo si pide hablar con alguien? ¿También si hot lead con intención de compra seria?
-6. **Templates vs Knowledge** — ¿El agente debe responder preguntas sobre productos (precios, contenido, diferencias entre cursos) en modo knowledge consultando docs? ¿O templates cerrados?
-7. **Producto a priorizar** — ¿Siempre empujar primero los 3 meses gratis como gancho? ¿O depende de lo que pregunte el lead?
+### Flow creado en prod (2026-03-19)
+- **Flow ID:** `byT0nXrgAS3Vv-soqs63A`
+- **Script:** `scripts/create-tradingpro-telegram-flow.js`
+- **5 categorías:** Interés general, Pregunta sobre productos (knowledge), Hot lead, Quiere invertir, No interesado
+- **6 templates:** Bienvenida, Gancho 3 meses, Reservar llamada, Darwinex, Llamada inversores, Cierre cordial
+- **4 extract fields:** nombre, intencion, experiencia, producto_interes
+- **Knowledge doc:** info completa de productos/precios para respuestas libres en categoría "Pregunta sobre productos"
 
 ## Productos TradingPro (para diseñar categories)
 
@@ -48,13 +49,15 @@ Ver detalle completo de productos, precios y contexto en → [tradingpro-flow-co
 
 ## Pasos para crear el flow
 
-1. Resolver preguntas pendientes (4-7)
-2. Diseñar categories + rules
-3. Crear templates con variables
-4. Definir extract fields
-5. Decidir si usar knowledge docs (info detallada de productos) o solo templates
-6. Crear flow via API o directamente en Turso prod
-7. (Futuro) Configurar agent_config + conexión canal Telegram
+- [x] Resolver preguntas de diseño
+- [x] Diseñar categorías + rules
+- [x] Crear templates con variables
+- [x] Definir extract fields
+- [x] Knowledge doc de productos
+- [x] Crear flow en Turso prod
+- [ ] Cliente provee `{{link_3_meses_gratis}}` y `{{link_calendario}}`
+- [ ] Sustituir variables en templates y hacer demo
+- [ ] (Futuro) Configurar agent_config + conexión canal Telegram
 
 ## Acceso directo a Turso prod
 
