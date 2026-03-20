@@ -36,10 +36,10 @@ FlowLab (Vercel) → POST /notify → notification-service (Railway) → wacli �
 ## Pasos
 
 - [x] Crear `notification-service/` con Express + wacli + Dockerfile + railway.toml
-- [ ] Push a GitHub + deploy en Railway
-- [ ] Anadir Volume en Railway (mount `/root/.wacli`)
-- [ ] Configurar env vars en Railway
-- [ ] Autenticar wacli: `POST /auth` → escanear QR en logs de Railway
+- [x] Deploy en Railway — build OK, healthcheck OK
+- [x] Volume montado en Railway (`/root/.wacli`)
+- [x] Env vars configuradas en Railway (`NOTIFY_SECRET`, `WACLI_STORE`)
+- [ ] **🔴 SIGUIENTE: probar en local primero** — el QR no aparece en los logs de Railway. Arrancar el servicio en local con `npm run dev`, hacer `wacli auth` manualmente para verificar que funciona, luego depurar el endpoint `/auth` para que el QR salga por stdout en Railway
 - [ ] Obtener JID del grupo de pruebas: `GET /chats?q=nombre`
 - [ ] Anadir `WHATSAPP_GROUP_JID` en Railway
 - [ ] Probar `POST /notify` manualmente con grupo de 2 moviles
