@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getFlowById, getKnowledgeDocsWithContent } from "@/lib/db";
 import { getTenantId } from "@/lib/get-tenant";
 import { classifyConversation, generateKnowledgeResponse } from "@/lib/router";
+import { dispatch } from "@/lib/alert-dispatcher";
 import type { SimMessage } from "@/lib/types";
 
 export async function POST(request: Request) {
@@ -45,6 +46,38 @@ export async function POST(request: Request) {
         result.generated_response = generatedText;
         result.suggested_template_id = null;
       }
+    }
+
+    // Fire alert events (same as agent-cycle, but from simulation)
+    // Groups are dev-only during testing — in prod, real team members join the groups
+    const time = new Date().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+    const lastMsg = messages[messages.length - 1];
+    const simPayload = {
+      lead_name: "🧪 Simulación",
+      flow_name: flow.name,
+      category: result.detected_status || "",
+      time,
+    };
+
+    dispatch(tenantId, flow_id, "inference.executed", simPayload).catch(() => {});
+
+    if (result.needs_human) {
+      dispatch(tenantId, flow_id, "needs_human", {
+        ...simPayload,
+        needs_human_reason: result.needs_human_reason || "",
+      }).catch(() => {});
+    }
+
+    const extracted = result.extracted_info ?? {};
+    if (extracted.telefono || extracted.email) {
+      const qualifiedPayload: Record<string, string> = {
+        ...simPayload,
+        category_name: result.detected_status || "",
+      };
+      for (const [k, v] of Object.entries(extracted)) {
+        qualifiedPayload[k] = v ?? "";
+      }
+      dispatch(tenantId, flow_id, "lead.qualified", qualifiedPayload).catch(() => {});
     }
 
     return NextResponse.json(result);
