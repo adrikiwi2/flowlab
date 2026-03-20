@@ -1,0 +1,12 @@
+[phases.setup]
+nixPkgs = ["go"]
+
+[phases.install]
+cmds = [
+  "npm ci --omit=dev",
+  "GOPATH=/app/.go go install github.com/steipete/wacli/cmd/wacli@latest",
+  "cp /app/.go/bin/wacli /usr/local/bin/wacli"
+]
+
+[start]
+cmd = "node src/index.js"
