@@ -56,12 +56,17 @@ export async function POST(request: Request) {
   }
   const tenantId = tenantRow.id;
 
-  // Resolve flow
-  const flow = await getFlowByName(tenantId, flow_name);
-  if (!flow) {
-    return NextResponse.json({ error: `Flow not found: "${flow_name}" for tenant ${tenant_email}` }, { status: 404 });
+  // Resolve flow — accept flow_id directly or look up by name
+  let flowId: string;
+  if (body.flow_id) {
+    flowId = body.flow_id;
+  } else {
+    const flow = await getFlowByName(tenantId, flow_name);
+    if (!flow) {
+      return NextResponse.json({ error: `Flow not found: "${flow_name}" for tenant ${tenant_email}` }, { status: 404 });
+    }
+    flowId = flow.id;
   }
-  const flowId = flow.id;
 
   // Idempotency check
   const existingCount = await countAlertRulesByFlow(flowId);
