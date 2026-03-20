@@ -8,7 +8,7 @@ COPY --from=wacli-builder /go/bin/wacli /usr/local/bin/wacli
 
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm install --omit=dev
 COPY src/ ./src/
 
 EXPOSE 3000
