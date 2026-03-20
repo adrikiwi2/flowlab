@@ -1,5 +1,5 @@
 # Stage 1: compilar wacli con Go
-FROM golang:1.22-alpine AS wacli-builder
+FROM golang:1.25-alpine AS wacli-builder
 RUN go install github.com/steipete/wacli/cmd/wacli@latest
 
 # Stage 2: runtime Node
