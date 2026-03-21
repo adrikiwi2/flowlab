@@ -124,6 +124,38 @@ Columna JSON en `flows`, admin-only. Define como el agente procesa conversacione
 }
 ```
 
+## Alert Engine
+
+Sistema configurable de notificaciones WhatsApp por eventos del agente.
+
+### Tablas
+- **alert_destinations** — destinos (WhatsApp group JID, Slack, etc.) vinculados a un tenant
+- **alert_rules** — reglas por tenant+flow+event_type. Campos: `conditions` (JSON), `template` (con `{{vars}}`), `destination_id`
+- **alert_logs** — audit trail de cada disparo (success/error + payload)
+
+### Dispatcher (`src/lib/alert-dispatcher.ts`)
+- `dispatch(tenantId, flowId, eventType, payload)` — never throws, errors van a `alert_logs`
+- Evalúa `conditions`: formato `{"field": "...", "op": "==|!=|contains", "value": "..."}` (una condición por regla)
+- Renderiza `{{var}}` en el template con el payload
+- Llama a `NOTIFY_SERVICE_URL/send` con `Authorization: Bearer NOTIFY_SECRET`
+
+### Eventos disponibles
+| Evento | Cuándo | Payload clave |
+|--------|--------|---------------|
+| `inference.executed` | Tras cada clasificación Gemini | `category`, `lead_name`, `flow_name`, `time` |
+| `message.sent` | Cuando se encola outbox item | `action`, `template_name`, `lead_name` |
+| `needs_human` | Cuando el LLM escala | `category`, `needs_human_reason`, `lead_name` |
+| `lead.qualified` | Cuando hay datos de contacto extraídos | `category_name`, `telefono`, `email`, + extracted fields |
+
+### Convenciones alert engine
+- El dispatch de `needs_human` SIEMPRE debe incluir `category: result.detected_status` — necesario para condiciones de routing por tipo de escalada
+- El dispatch de `lead.qualified` NO debe dispararse cuando `needs_human=true` (parity entre simulation y agent-cycle)
+- Las condiciones en DB son el filtro autoritativo: el evento puede dispararse libremente, la regla decide si actuar
+- Env vars requeridas: `NOTIFY_SERVICE_URL` (URL del servidor puente local + Cloudflare Tunnel), `NOTIFY_SECRET` (Bearer token del servidor puente)
+
+### Servidor puente (local)
+Node.js en portátil expuesto via Cloudflare Tunnel. Recibe `POST /send { jid, message }` y lo envía por wacli. La URL del túnel cambia en cada sesión — actualizar `NOTIFY_SERVICE_URL` en Vercel si cambia.
+
 ## Comandos
 
 ```bash

@@ -53,13 +53,20 @@
     },
     {
       "id": "m8",
+      "title": "Alert Engine — Motor de alertas multi-canal",
+      "status": "in_progress",
+      "due": null,
+      "notes": "Motor configurable por tenant: tablas alert_destinations + alert_rules + alert_logs. Dispatcher en FlowLab evalua condiciones, renderiza templates con variables, llama a notification-service (Fly.io + whatsapp-web.js). Catalogo de eventos: lead.qualified, needs_human, message.received, inference.executed, message.sent. Primer caso: IberoExpress con 3 reglas (logs admin, RRSS needs_human, comerciales lead.qualified). Arquitectura extensible: anadir Slack/webhook solo requiere nuevo provider en alert_destinations."
+    },
+    {
+      "id": "m9",
       "title": "Policy engine completo",
       "status": "planned",
       "due": null,
       "notes": "Portar logica de policy_engine.py: policy_rules en orden, flags, advance_to. max_interactions ya implementado como hard limit en agent-cycle.ts."
     },
     {
-      "id": "m9",
+      "id": "m10",
       "title": "Dashboard de conversaciones",
       "status": "planned",
       "due": null,

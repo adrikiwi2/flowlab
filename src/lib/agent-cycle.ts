@@ -223,6 +223,7 @@ async function processConversation(
     dispatch(conn.tenant_id, flow.id, "needs_human", {
       lead_name: leadName,
       flow_name: flow.name,
+      category: result.detected_status || "",
       needs_human_reason: result.needs_human_reason || "",
       time,
     }).catch(() => {});

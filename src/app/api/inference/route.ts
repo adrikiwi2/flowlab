@@ -68,16 +68,18 @@ export async function POST(request: Request) {
       }).catch(() => {});
     }
 
-    const extracted = result.extracted_info ?? {};
-    if (extracted.telefono || extracted.email) {
-      const qualifiedPayload: Record<string, string> = {
-        ...simPayload,
-        category_name: result.detected_status || "",
-      };
-      for (const [k, v] of Object.entries(extracted)) {
-        qualifiedPayload[k] = v ?? "";
+    if (!result.needs_human) {
+      const extracted = result.extracted_info ?? {};
+      if (extracted.telefono || extracted.email) {
+        const qualifiedPayload: Record<string, string> = {
+          ...simPayload,
+          category_name: result.detected_status || "",
+        };
+        for (const [k, v] of Object.entries(extracted)) {
+          qualifiedPayload[k] = v ?? "";
+        }
+        dispatch(tenantId, flow_id, "lead.qualified", qualifiedPayload).catch(() => {});
       }
-      dispatch(tenantId, flow_id, "lead.qualified", qualifiedPayload).catch(() => {});
     }
 
     return NextResponse.json(result);
