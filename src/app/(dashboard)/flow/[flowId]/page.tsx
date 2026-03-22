@@ -85,7 +85,7 @@ function FlowPageInner() {
       </div>
 
       {/* Section content */}
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className={`min-h-0 flex-1 ${section === "conversation" ? "overflow-hidden" : "overflow-y-auto"}`}>
         {section === "overview" && (
           <div className="p-6">
             <p className="text-sm text-text-muted">
@@ -95,6 +95,7 @@ function FlowPageInner() {
         )}
 
         {section === "conversation" && (
+          <div className="h-full">
           <SimulationPanel
             flowId={flowId}
             roleALabel={roleA || "Company"}
@@ -104,6 +105,7 @@ function FlowPageInner() {
             fireAlerts={fireAlerts}
             onToggleAlerts={handleToggleAlerts}
           />
+          </div>
         )}
 
         {section === "design" && (
