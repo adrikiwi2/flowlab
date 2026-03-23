@@ -88,9 +88,17 @@ export interface InferenceResult {
   generated_response?: string | null;
 }
 
+export interface FlowVariable {
+  id: string;
+  flow_id: string;
+  key: string;
+  value: string;
+}
+
 export interface FlowWithDetails extends Flow {
   categories: Category[];
   extract_fields: ExtractField[];
   templates: Template[];
   knowledge_docs: KnowledgeDoc[];
+  variables: FlowVariable[];
 }

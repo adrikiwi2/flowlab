@@ -16,10 +16,11 @@ import {
   ArrowLeft,
   ChevronRight,
   Layers,
+  Braces,
 } from "lucide-react";
-import type { Category, ExtractField, Template, KnowledgeDoc } from "@/lib/types";
+import type { Category, ExtractField, Template, KnowledgeDoc, FlowVariable } from "@/lib/types";
 
-type DesignerView = "dashboard" | "categories" | "templates" | "knowledge" | "fields";
+type DesignerView = "dashboard" | "categories" | "templates" | "knowledge" | "fields" | "variables";
 
 interface FlowDesignerProps {
   flowId: string;
@@ -27,6 +28,7 @@ interface FlowDesignerProps {
   extractFields: ExtractField[];
   templates: Template[];
   knowledgeDocs: KnowledgeDoc[];
+  variables: FlowVariable[];
   onUpdate: () => void;
 }
 
@@ -41,6 +43,7 @@ export function FlowDesigner({
   extractFields,
   templates,
   knowledgeDocs,
+  variables,
   onUpdate,
 }: FlowDesignerProps) {
   const [view, setView] = useState<DesignerView>("dashboard");
@@ -102,6 +105,29 @@ export function FlowDesigner({
     onUpdate();
   };
 
+  const addVariable = async () => {
+    await fetch(`/api/flows/${flowId}/variables`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: "variable_name", value: "" }),
+    });
+    onUpdate();
+  };
+
+  const updateVariable = async (id: string, data: Partial<FlowVariable>) => {
+    await fetch(`/api/variables/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    onUpdate();
+  };
+
+  const deleteVariable = async (id: string) => {
+    await fetch(`/api/variables/${id}`, { method: "DELETE" });
+    onUpdate();
+  };
+
   const addTemplate = async (categoryId: string) => {
     await fetch("/api/templates", {
       method: "POST",
@@ -133,6 +159,7 @@ export function FlowDesigner({
         templates={templates}
         knowledgeDocs={knowledgeDocs}
         extractFields={extractFields}
+        variables={variables}
         onNavigate={setView}
       />
     );
@@ -140,10 +167,11 @@ export function FlowDesigner({
 
   /* ── Detail Views ── */
   const SECTION_META: Record<Exclude<DesignerView, "dashboard">, { label: string; icon: React.ElementType; color: string }> = {
-    categories: { label: "Classification Categories", icon: Palette, color: "text-accent" },
+    categories: { label: "Classification Categories", icon: Palette,      color: "text-accent" },
     templates:  { label: "Templates",                 icon: MessageSquare, color: "text-violet" },
-    knowledge:  { label: "Knowledge Base",            icon: BookOpen, color: "text-emerald-400" },
-    fields:     { label: "Extract Fields",            icon: Database, color: "text-blue-400" },
+    knowledge:  { label: "Knowledge Base",            icon: BookOpen,      color: "text-emerald-400" },
+    fields:     { label: "Extract Fields",            icon: Database,      color: "text-blue-400" },
+    variables:  { label: "Flow Variables",            icon: Braces,        color: "text-orange-400" },
   };
 
   const meta = SECTION_META[view as Exclude<DesignerView, "dashboard">];
@@ -187,6 +215,15 @@ export function FlowDesigner({
           >
             <Plus size={13} />
             Add Field
+          </button>
+        )}
+        {view === "variables" && (
+          <button
+            onClick={addVariable}
+            className="flex items-center gap-1.5 rounded-lg border border-border-bright px-3 py-1.5 text-xs font-medium text-text-secondary transition-all hover:border-orange-400/40 hover:text-orange-400"
+          >
+            <Plus size={13} />
+            Add Variable
           </button>
         )}
       </div>
@@ -263,6 +300,28 @@ export function FlowDesigner({
           )}
         </div>
       )}
+
+      {view === "variables" && (
+        <div>
+          <p className="mb-3 text-xs text-text-muted">
+            Values for <code className="rounded bg-base-2 px-1 py-0.5 font-mono text-[10px]">{"{{placeholders}}"}</code> used in templates (e.g. <code className="rounded bg-base-2 px-1 py-0.5 font-mono text-[10px]">calendar_link</code>). Rendered when a message is approved.
+          </p>
+          {variables.length === 0 ? (
+            <EmptySection message="No variables. Add one to replace {{placeholders}} in your templates." />
+          ) : (
+            <div className="space-y-2">
+              {variables.map((v) => (
+                <VariableRow
+                  key={v.id}
+                  variable={v}
+                  onUpdate={updateVariable}
+                  onDelete={deleteVariable}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -274,12 +333,14 @@ function DesignerDashboard({
   templates,
   knowledgeDocs,
   extractFields,
+  variables,
   onNavigate,
 }: {
   categories: Category[];
   templates: Template[];
   knowledgeDocs: KnowledgeDoc[];
   extractFields: ExtractField[];
+  variables: FlowVariable[];
   onNavigate: (view: DesignerView) => void;
 }) {
   const knowledgeCats = categories.filter((c) => c.mode === "knowledge").length;
@@ -453,6 +514,37 @@ function DesignerDashboard({
             </div>
           ) : (
             <p className="text-[11px] text-text-muted">Fields the AI extracts from conversations</p>
+          )}
+        </DashCard>
+
+        {/* Variables card */}
+        <DashCard
+          onClick={() => onNavigate("variables")}
+          icon={Braces}
+          iconColor="text-orange-400"
+          hoverBorder="hover:border-orange-400/30"
+          label="Flow Variables"
+          count={variables.length}
+          unit={variables.length === 1 ? "variable" : "variables"}
+          status={variables.length > 0 ? "ok" : "muted"}
+          statusLabel={variables.length > 0 ? "Replacing {{placeholders}}" : "Optional — fills template placeholders"}
+        >
+          {variables.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {variables.slice(0, 6).map((v) => (
+                <span
+                  key={v.id}
+                  className="rounded-full border border-border bg-base-2 px-2 py-0.5 font-mono text-[10px] text-text-muted"
+                >
+                  {`{{${v.key}}}`}
+                </span>
+              ))}
+              {variables.length > 6 && (
+                <span className="text-[10px] text-text-muted">+{variables.length - 6}</span>
+              )}
+            </div>
+          ) : (
+            <p className="text-[11px] text-text-muted">Define values for {"{{placeholders}}"} in templates</p>
           )}
         </DashCard>
       </div>
@@ -1121,6 +1213,50 @@ function FieldRow({
       />
       <button
         onClick={() => onDelete(field.id)}
+        className="rounded-md p-1.5 text-text-muted transition-all hover:bg-danger/10 hover:text-danger"
+      >
+        <Trash2 size={13} />
+      </button>
+    </div>
+  );
+}
+
+/* ── Variable Row ─────────────────────────────── */
+
+function VariableRow({
+  variable,
+  onUpdate,
+  onDelete,
+}: {
+  variable: FlowVariable;
+  onUpdate: (id: string, data: Partial<FlowVariable>) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [key, setKey] = useState(variable.key);
+  const [value, setValue] = useState(variable.value);
+
+  return (
+    <div className="flex items-center gap-3 rounded-lg border border-border bg-base-1 px-4 py-3">
+      <Braces size={12} className="flex-shrink-0 text-orange-400" />
+      <span className="text-[11px] text-text-muted">{"{{" }</span>
+      <input
+        value={key}
+        onChange={(e) => setKey(e.target.value)}
+        onBlur={() => key !== variable.key && onUpdate(variable.id, { key })}
+        className="w-32 bg-transparent font-mono text-xs font-medium text-text-primary outline-none"
+        placeholder="variable_name"
+      />
+      <span className="text-[11px] text-text-muted">{"}}"}</span>
+      <span className="text-[11px] text-text-muted">=</span>
+      <input
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={() => value !== variable.value && onUpdate(variable.id, { value })}
+        className="flex-1 bg-transparent text-xs text-text-secondary outline-none"
+        placeholder="value..."
+      />
+      <button
+        onClick={() => onDelete(variable.id)}
         className="rounded-md p-1.5 text-text-muted transition-all hover:bg-danger/10 hover:text-danger"
       >
         <Trash2 size={13} />

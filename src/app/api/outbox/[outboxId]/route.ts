@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { getTenantId } from "@/lib/get-tenant";
-import { getOutboxItem, updateOutboxStatus, createMessage } from "@/lib/db";
+import { getOutboxItem, updateOutboxStatus, createMessage, getFlowVariables } from "@/lib/db";
 import { sendTextMessage } from "@/lib/composio";
+import { renderVariables } from "@/lib/prompt-builder";
 
 export async function POST(
   request: Request,
@@ -26,10 +27,15 @@ export async function POST(
     const payload = JSON.parse(item.payload_json);
 
     try {
+      // Render flow variables in the message text before sending
+      const flowId = payload.flow_id as string | undefined;
+      const variables = flowId ? await getFlowVariables(flowId) : [];
+      const renderedText = renderVariables(payload.text, variables);
+
       const { messageId } = await sendTextMessage(
         payload.composio_user_id,
         payload.recipient_id,
-        payload.text
+        renderedText
       );
 
       await updateOutboxStatus(outboxId, "sent");

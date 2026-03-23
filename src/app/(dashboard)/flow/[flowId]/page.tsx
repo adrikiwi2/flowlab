@@ -115,6 +115,7 @@ function FlowPageInner() {
               extractFields={flow.extract_fields}
               templates={flow.templates}
               knowledgeDocs={flow.knowledge_docs}
+              variables={flow.variables ?? []}
               onUpdate={fetchFlow}
             />
           </div>

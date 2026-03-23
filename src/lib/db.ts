@@ -8,6 +8,7 @@ import type {
   Simulation,
   FlowWithDetails,
   KnowledgeDoc,
+  FlowVariable,
 } from "./types";
 import type { ComposioConnection } from "./composio";
 
@@ -210,6 +211,13 @@ export async function initSchema() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS flow_variables (
+      id TEXT PRIMARY KEY,
+      flow_id TEXT NOT NULL REFERENCES flows(id) ON DELETE CASCADE,
+      key TEXT NOT NULL,
+      value TEXT NOT NULL DEFAULT ''
+    );
+
     CREATE INDEX IF NOT EXISTS idx_composio_conn_tenant ON composio_connections(tenant_id, channel);
     CREATE INDEX IF NOT EXISTS idx_alert_rules_lookup ON alert_rules(tenant_id, flow_id, event_type, is_active);
     CREATE INDEX IF NOT EXISTS idx_leads_tenant_flow ON leads(tenant_id, flow_id);
@@ -295,7 +303,7 @@ export async function getFlowById(id: string, tenantId: string): Promise<FlowWit
   const flow = flowRs.rows[0] as unknown as Flow | undefined;
   if (!flow) return null;
 
-  const [catRs, fieldRs, tplRs, kdRs] = await Promise.all([
+  const [catRs, fieldRs, tplRs, kdRs, varRs] = await Promise.all([
     c.execute({
       sql: "SELECT * FROM categories WHERE flow_id = ? ORDER BY sort_order, created_at",
       args: [id],
@@ -303,6 +311,7 @@ export async function getFlowById(id: string, tenantId: string): Promise<FlowWit
     c.execute({ sql: "SELECT * FROM extract_fields WHERE flow_id = ?", args: [id] }),
     c.execute({ sql: "SELECT * FROM templates WHERE flow_id = ? ORDER BY created_at", args: [id] }),
     c.execute({ sql: "SELECT id, flow_id, name, doc_type, sort_order, created_at FROM knowledge_docs WHERE flow_id = ? ORDER BY sort_order, created_at", args: [id] }),
+    c.execute({ sql: "SELECT * FROM flow_variables WHERE flow_id = ? ORDER BY rowid", args: [id] }),
   ]);
 
   return {
@@ -311,6 +320,7 @@ export async function getFlowById(id: string, tenantId: string): Promise<FlowWit
     extract_fields: fieldRs.rows as unknown as ExtractField[],
     templates: tplRs.rows as unknown as Template[],
     knowledge_docs: kdRs.rows as unknown as KnowledgeDoc[],
+    variables: varRs.rows as unknown as FlowVariable[],
   };
 }
 
@@ -1047,6 +1057,41 @@ export async function getKnowledgeDocsWithContent(flowId: string): Promise<Knowl
     args: [flowId],
   });
   return rs.rows as unknown as KnowledgeDoc[];
+}
+
+// --- Flow Variables ---
+
+export async function getFlowVariables(flowId: string): Promise<FlowVariable[]> {
+  const c = await db();
+  const rs = await c.execute({ sql: "SELECT * FROM flow_variables WHERE flow_id = ? ORDER BY rowid", args: [flowId] });
+  return rs.rows as unknown as FlowVariable[];
+}
+
+export async function createFlowVariable(data: { id: string; flow_id: string; key: string; value: string }): Promise<FlowVariable> {
+  const c = await db();
+  await c.execute({
+    sql: "INSERT INTO flow_variables (id, flow_id, key, value) VALUES (?, ?, ?, ?)",
+    args: [data.id, data.flow_id, data.key, data.value],
+  });
+  const rs = await c.execute({ sql: "SELECT * FROM flow_variables WHERE id = ?", args: [data.id] });
+  return rs.rows[0] as unknown as FlowVariable;
+}
+
+export async function updateFlowVariable(id: string, data: Partial<Pick<FlowVariable, "key" | "value">>): Promise<FlowVariable> {
+  const c = await db();
+  const fields = Object.keys(data).map((k) => `${k} = ?`);
+  const values = [...Object.values(data), id];
+  await c.execute({ sql: `UPDATE flow_variables SET ${fields.join(", ")} WHERE id = ?`, args: values });
+  const rs = await c.execute({ sql: "SELECT * FROM flow_variables WHERE id = ?", args: [id] });
+  return rs.rows[0] as unknown as FlowVariable;
+}
+
+export async function deleteFlowVariable(id: string, tenantId: string): Promise<void> {
+  const c = await db();
+  await c.execute({
+    sql: "DELETE FROM flow_variables WHERE id = ? AND flow_id IN (SELECT id FROM flows WHERE tenant_id = ?)",
+    args: [id, tenantId],
+  });
 }
 
 // --- Alert Engine ---

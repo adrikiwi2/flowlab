@@ -1,4 +1,8 @@
-import type { Flow, Category, ExtractField, Template, SimMessage, KnowledgeDoc } from "./types";
+import type { Flow, Category, ExtractField, Template, SimMessage, KnowledgeDoc, FlowVariable } from "./types";
+
+export function renderVariables(text: string, variables: FlowVariable[]): string {
+  return variables.reduce((t, v) => t.replaceAll(`{{${v.key}}}`, v.value), text);
+}
 
 export function buildConversationHistory(
   messages: SimMessage[],
@@ -19,8 +23,11 @@ export function buildClassificationPrompt(
   extractFields: ExtractField[],
   templates: Template[],
   conversationHistory: string,
-  usedTemplateIds: string[] = []
+  usedTemplateIds: string[] = [],
+  variables: FlowVariable[] = []
 ): string {
+  // Render flow variables in template bodies before sending to Gemini
+  templates = templates.map((t) => ({ ...t, body: renderVariables(t.body, variables) }));
   const categoryRules = categories
     .map((c) => `- STATUS: "${c.name}" → ${c.rules}`)
     .join("\n");

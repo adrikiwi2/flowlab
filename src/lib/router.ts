@@ -31,7 +31,8 @@ export async function classifyConversation(
     flow.extract_fields,
     flow.templates,
     historyString,
-    usedTemplateIds
+    usedTemplateIds,
+    flow.variables ?? []
   );
 
   const result = await model.generateContent(prompt);
