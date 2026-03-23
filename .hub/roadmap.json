@@ -56,7 +56,7 @@
       "title": "Alert Engine — Motor de alertas multi-canal",
       "status": "in_progress",
       "due": null,
-      "notes": "Motor configurable por tenant: tablas alert_destinations + alert_rules + alert_logs. Dispatcher en FlowLab evalua condiciones, renderiza templates con variables, llama a notification-service (Fly.io + whatsapp-web.js). Catalogo de eventos: lead.qualified, needs_human, message.received, inference.executed, message.sent. Primer caso: IberoExpress con 3 reglas (logs admin, RRSS needs_human, comerciales lead.qualified). Arquitectura extensible: anadir Slack/webhook solo requiere nuevo provider en alert_destinations."
+      "notes": "Motor configurable por tenant: tablas alert_destinations + alert_rules + alert_logs. Dispatcher en FlowLab evalua condiciones, renderiza templates con {{vars}}, llama a notification-service via POST /notify { to, message }. Catalogo de eventos: lead.qualified, needs_human, message.received, inference.executed, message.sent. IberoExpress: 4 destinos + 6 reglas activas (Logs Admin, RRSS, Comerciales, Proveedores Partners). Servidor puente: Node.js + wacli + Cloudflare Tunnel en portátil oficina (URL cambia por sesión → actualizar NOTIFY_SERVICE_URL en Vercel). UI: pestaña Alerts en flow view + toggle simulación ON/OFF en localStorage. Pendiente: validar en simulación con toggle ON antes de conectar Instagram real."
     },
     {
       "id": "m9",

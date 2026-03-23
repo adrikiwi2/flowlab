@@ -21,13 +21,15 @@ agent-cycle.ts
 ```
 
 ```
-FlowLab (Vercel)                     Notification Service (Fly.io)
-─────────────────                    ─────────────────────────────
-alert_destinations (DB)              POST /send { jid, message }
-alert_rules (DB)             ──→     POST /auth  (QR)
-alert_logs (DB)                      GET  /chats (buscar JIDs)
+FlowLab (Vercel)                     Notification Service (portátil + Cloudflare Tunnel)
+─────────────────                    ──────────────────────────────────────────────────
+alert_destinations (DB)              POST /notify { to: jid, message }
+alert_rules (DB)             ──→     GET  /chats  (buscar JIDs)
+alert_logs (DB)                      GET  /health
 alert-dispatcher.ts
 ```
+
+> **Arquitectura real**: el servidor puente corre en el portátil de la oficina (Node.js + wacli), expuesto via Cloudflare Tunnel. La URL cambia en cada sesión — actualizar `NOTIFY_SERVICE_URL` en Vercel cuando eso ocurra. NO está en Fly.io.
 
 ## Modelo de datos (3 tablas nuevas en FlowLab)
 
@@ -78,18 +80,19 @@ Audit trail para depuracion ("no me llego el WhatsApp").
 | `needs_human` | Lead escalado a human review |
 | `lead.qualified` | `extracted_info` tiene `telefono` o `email` |
 
-## Notification service (Fly.io)
+## Notification service (portátil + Cloudflare Tunnel)
 
-Stack: Node.js + Express + whatsapp-web.js (reemplaza wacli)
+Stack: Node.js + Express + wacli. Corre en el portátil de la oficina.
 
 ```
-POST /send   { jid, message }   → envia WhatsApp al grupo
-POST /auth                       → genera QR en consola/logs
-GET  /chats  ?q=nombre           → lista grupos para obtener JIDs
-GET  /health                     → healthcheck
+POST /notify  { to: jid, message }  → envía WhatsApp al grupo via wacli
+GET  /chats   ?q=nombre             → lista grupos para obtener JIDs
+GET  /health                        → healthcheck
 ```
 
 Auth: `Authorization: Bearer NOTIFY_SECRET`
+
+> OJO: el campo es `to`, no `jid`. El endpoint es `/notify`, no `/send`.
 
 ## Configuracion IberoExpress (ejemplo inicial)
 
@@ -109,21 +112,36 @@ Auth: `Authorization: Bearer NOTIFY_SECRET`
 - [x] Prueba end-to-end OK: curl desde internet → portátil → wacli → grupo WhatsApp real
 - [x] JID grupo pruebas: `34691194200-1539273431@g.us`
 
-### Fase 2 — Modelo de datos en FlowLab
-- [ ] Migracion: tablas `alert_destinations`, `alert_rules`, `alert_logs`
-- [ ] API admin: `GET/POST/DELETE /api/admin/alert-destinations`
-- [ ] API admin: `GET/POST/DELETE /api/admin/alert-rules`
+### Fase 2 — Modelo de datos en FlowLab ✅ COMPLETADO
+- [x] Migracion: tablas `alert_destinations`, `alert_rules`, `alert_logs`
+- [x] API admin: `GET/POST/DELETE /api/admin/alert-destinations`
+- [x] API admin: `GET/POST/DELETE /api/admin/alert-rules`
 
-### Fase 3 — Dispatcher en FlowLab
-- [ ] `src/lib/alert-dispatcher.ts` — renderizar template con payload, evaluar conditions
-- [ ] Hooks en `agent-cycle.ts` — emit eventos en cada paso del ciclo
-- [ ] `alert_logs` — registrar cada intento (success/error)
+### Fase 3 — Dispatcher en FlowLab ✅ COMPLETADO
+- [x] `src/lib/alert-dispatcher.ts` — renderizar template con payload, evaluar conditions
+- [x] Hooks en `agent-cycle.ts` — emit eventos en cada paso del ciclo
+- [x] `alert_logs` — registrar cada intento (success/error)
+- [x] Corregir bug: endpoint `/send` → `/notify`, campo `jid` → `to` (alertas fallaban silenciosamente)
+- [x] `lead.qualified` guardado detrás de `!needs_human` (fix paridad)
+- [x] Campo `category` añadido al payload de `needs_human` (necesario para condiciones de routing)
 
-### Fase 4 — Deploy y configuracion
-- [ ] Deploy notification-service en Fly.io con volumen persistente para sesion WA
-- [ ] Env vars en Vercel: `NOTIFY_SERVICE_URL`, `NOTIFY_SECRET`
-- [ ] Configurar destinations + rules para IberoExpress via admin API
-- [ ] Probar end-to-end: lead cualificado → alerta en grupo Comerciales
+### Fase 4 — Deploy y configuracion ✅ COMPLETADO
+- [x] Servidor local en portátil + Cloudflare Tunnel (en lugar de Fly.io)
+- [x] Env vars en Vercel: `NOTIFY_SERVICE_URL`, `NOTIFY_SECRET`
+- [x] Seed IberoExpress: 4 destinos + 6 reglas en prod
+- [x] Prueba end-to-end: alertas llegando a grupos WhatsApp reales
+
+### Fase 5 — UI de alertas ✅ COMPLETADO (2026-03-22)
+- [x] Nueva pestaña **Alerts** (4ª pestaña) en la vista de flow
+- [x] Toggle ON/OFF alertas en simulación (persiste en localStorage por flow)
+- [x] Endpoint `GET /api/flows/[flowId]/alerts` (rules + destinations + logs por tenant)
+- [x] Inference endpoint acepta flag `fire_alerts` (default true, false desde UI cuando toggle OFF)
+
+### Siguiente — Validación en simulación
+- [x] **Actualizar server.js del portátil** — `POST /send { jid }` → `POST /notify { to }`. Contrato alineado con el dispatcher.
+- [ ] Simular B2B completa con alertas ON y verificar que llegan a los grupos correctos
+- [ ] Simular B2C, proveedor, fuera_de_contexto
+- [ ] Ver [paso 4 en ibero-leads-organicos-deploy.md](ibero-leads-organicos-deploy.md)
 
 ## Formatos de mensaje (plantillas iniciales)
 

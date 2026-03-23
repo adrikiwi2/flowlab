@@ -60,20 +60,32 @@
 - **System prompt Agente Comercial optimizado**: el agente sabe que el cliente ya esta identificado (nombre, empresa, codigo SAP, historial). No pregunta quien es, no explica sus pasos internos, escribe como el comercial humano. Rules de categorias knowledge actualizadas para reforzar esto.
 
 ## Novedades (2026-03-20)
-- **Alert Engine completo**: tablas `alert_destinations`+`alert_rules`+`alert_logs` en Turso. `alert-dispatcher.ts` evalua reglas, renderiza templates `{{var}}`, llama a `NOTIFY_SERVICE_URL/send`. Hooks en `agent-cycle.ts`: 5 eventos (message.received, inference.executed, needs_human, lead.qualified, message.sent). Seed ejecutado en prod para IberoExpress "Leads Organicos" (flow `xZJX2B7hDOELmLBhnDyrp`): 3 destinos + 4 reglas.
-- **Servidor puente local**: Node.js + wacli + Cloudflare Tunnel en portátil. URL activa: `https://jackets-disclaimer-how-sessions.trycloudflare.com`. Env vars `NOTIFY_SERVICE_URL` + `NOTIFY_SECRET` añadidas en Vercel.
+- **Alert Engine completo**: tablas `alert_destinations`+`alert_rules`+`alert_logs` en Turso. `alert-dispatcher.ts` evalua reglas, renderiza templates `{{var}}`, llama a `NOTIFY_SERVICE_URL/notify`. Hooks en `agent-cycle.ts`: 5 eventos (message.received, inference.executed, needs_human, lead.qualified, message.sent). Seed ejecutado en prod para IberoExpress "Leads Organicos" (flow `xZJX2B7hDOELmLBhnDyrp`): 3 destinos + 4 reglas.
+- **Servidor puente local**: Node.js + wacli + Cloudflare Tunnel en **portátil de la oficina** (no Fly.io). Expone `POST /notify { to, message }` con auth Bearer. URL del túnel cambia en cada sesión — actualizar `NOTIFY_SERVICE_URL` en Vercel. Env vars `NOTIFY_SERVICE_URL` + `NOTIFY_SECRET` añadidas en Vercel.
 - **Flow Start Health Check (diseñado)**: pendiente de implementar. Ver [task](tasks/flow-start-health-check.md)
 
+## Novedades (2026-03-22)
+- **Designer tab rediseñada como bento 2x2**: dashboard con tarjetas KPI para Categorías, Templates, Knowledge Base y Extract Fields. Clicar cada tarjeta navega a la vista de edición con botón de vuelta. Flujo de edición mucho más claro.
+- **Nueva pestaña Alerts (4ª pestaña)**: vista `Designer | Simulate | Live | Alerts`. Muestra: toggle simulación activa/inactiva, reglas agrupadas por tipo de evento, lista de destinos, logs recientes con iconos de estado (success/error).
+- **Toggle de alertas en simulación**: ON/OFF, default OFF. Persiste en `localStorage` por flow. Cuando está OFF, el endpoint `/api/inference` recibe `fire_alerts=false` y no llama al dispatcher. Cuando está ON, dispara alertas reales desde simulación.
+- **Nuevo endpoint `GET /api/flows/[flowId]/alerts`**: devuelve rules + destinations + logs filtrados por tenantId. Usado por la pestaña Alerts.
+- **Bug crítico corregido en alert-dispatcher**: endpoint `/send` → `/notify` y campo `jid` → `to`. Estos errores hacían que todas las alertas fallaran silenciosamente — ningún WhatsApp llegaba realmente.
+- **Nuevo destino y regla "Proveedores Partners"**: grupo `120363405231606345@g.us`. Regla con condición `category == "Proveedor / colaboración"` — solo fires cuando la categoría detectada es proveedor/partner.
+- **`lead.qualified` guardado detrás de `!needs_human`**: fix de paridad — si el LLM escala a needs_human, el evento lead.qualified ya no se dispara (era un bug que podía notificar a Comerciales aunque el lead fuera B2C).
+- **`category` añadido al payload de `needs_human`**: necesario para las condiciones de routing por tipo de escalada (ej: solo Proveedores Partners si `category == "Proveedor / colaboración"`).
+- **Textareas auto-resize**: Classification Rules (colapsable por defecto), Template body y mensaje de simulación se adaptan al contenido.
+- **Alert routing final en prod (6 reglas)**: inference.executed → Logs Admin | message.sent → Logs Admin | needs_human → Logs Admin | needs_human → RRSS | needs_human (proveedor) → Proveedores Partners | lead.qualified (datos_recibidos) → Comerciales Ibero.
+
 ## Pendiente
-1. **🟡 Flow Start Health Check**: primer scan silencioso con reporte diagnóstico al Logs Admin. Ver [task](tasks/flow-start-health-check.md)
-2. **🟡 Conectar cuenta Instagram IberoExpress**: enchufar composio connection real en prod + primer Scan Inbox
-2. **🔴 Flow "Leads Telegram" para Tradingpro**: nuevo flow inbound via ads IG/FB → Telegram. Gancho: 3 meses gratis canal privado. Pendiente: ejemplos de interacciones reales del cliente + resolver preguntas de diseño (tono, escalacion, knowledge vs templates). Ver [task](tasks/tradingpro-telegram-flow.md) y [contexto](tasks/tradingpro-flow-context.md)
-2. **Policy engine completo**: portar logica de stages/flags/policy_rules desde flowlab-agent (max_interactions ya implementado)
-3. **Dashboard de conversaciones**: vista detallada de leads con historial de mensajes
-4. **Cron automatico**: Vercel Cron o webhook de Composio para ejecutar ciclo sin boton manual
-5. **Catalogo completo IberoExpress**: anadir producto seco al knowledge doc (solo congelados por ahora)
-6. **Stages en flow designer**: feature nueva — definir stages por flow (UI), categories condicionadas por stage, transiciones explicitas. Desbloquea flows multi-paso como el Agente Comercial (recepcion → extraccion → validacion → propuesta → aprobado)
-7. **Tradingpro backlog** (baja prioridad): 4 flows futuros — seguidores IG, LinkedIn (contactos/likes/visitas), WhatsApp seguimiento clientes, prospeccion afiliados. Ver [backlog](tasks/tradingpro-future-flows.md)
+1. **🟡 Validar alert engine en simulación (IberoExpress)**: simular B2B completa, B2C, proveedor/partner con toggle ON. Ver paso 4 en [ibero-leads-organicos-deploy.md](tasks/ibero-leads-organicos-deploy.md)
+2. **🟡 Conectar cuenta Instagram IberoExpress**: OAuth self-service desde Live tab + primer Scan Inbox con alertas reales
+3. **🟡 Flow Start Health Check**: primer scan silencioso con reporte diagnóstico al Logs Admin. Ver [task](tasks/flow-start-health-check.md)
+4. **🔴 Flow "Leads Telegram" para Tradingpro**: nuevo flow inbound via ads IG/FB → Telegram. Pendiente: ejemplos de interacciones reales del cliente. Ver [task](tasks/tradingpro-telegram-flow.md)
+5. **Policy engine completo**: portar logica de stages/flags/policy_rules desde flowlab-agent (max_interactions ya implementado)
+6. **Dashboard de conversaciones**: vista detallada de leads con historial de mensajes
+7. **Cron automatico**: Vercel Cron o webhook de Composio para ejecutar ciclo sin boton manual
+8. **Stages en flow designer**: UI para definir stages por flow, categories condicionadas por stage, transiciones explicitas
+9. **Tradingpro backlog** (baja prioridad): 4 flows futuros. Ver [backlog](tasks/tradingpro-future-flows.md)
 
 ## Tenants en produccion
 | Tenant | Email | Flow | Contexto | agent_config |
