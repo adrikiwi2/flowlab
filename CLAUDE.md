@@ -184,3 +184,12 @@ npm run lint      # ESLint
 - Knowledge Base: documentos (PDF/texto) a nivel de flow. Categorias con `mode=knowledge` generan respuesta libre consultando docs via Gemini multimodal
 - PDFs se almacenan como base64 en `knowledge_docs.content_pdf_b64` (SQLite TEXT). Gemini los recibe como `inlineData` (soporte nativo PDF)
 - El toggle de mode solo aparece en categorias cuando el flow tiene al menos un knowledge doc
+
+## Linear
+
+- Workspace: `theorystudio`
+- Team: **Flowlab** (key: `FLW`)
+- Los tools MCP de Linear (`mcp__claude_ai_Linear__*`) vienen de la cuenta claude.ai como deferred tools. No están en settings.json.
+- Para buscar issues: `list_issues(team: "Flowlab")`
+- Para crear issues: `save_issue(team: "Flowlab", title: "...", priority: 2)`
+- Antes de usar tools de Linear, cargarlos con: `ToolSearch("select:mcp__claude_ai_Linear__list_issues")`
